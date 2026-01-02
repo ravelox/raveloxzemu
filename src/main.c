@@ -7,4 +7,12 @@
 int main( int argc, char *argv[] )
 {
 
+    register_init();
+    
+    register_display();
+
+    register_destroy();
+
+    return 0;
+
 }

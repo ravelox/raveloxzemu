@@ -11,3 +11,5 @@
 # Object and binary artifacts
 *.o
 *.obj
+
+.cache/

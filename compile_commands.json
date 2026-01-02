@@ -1,0 +1,14 @@
+[
+{
+  "directory": "/Users/dkelly/Projects/raveloxzemu",
+  "command": "/usr/bin/cc  -I/Users/dkelly/Projects/raveloxzemu/include -std=c17 -arch arm64 -o CMakeFiles/raveloxzemu.dir/src/main.c.o -c /Users/dkelly/Projects/raveloxzemu/src/main.c",
+  "file": "/Users/dkelly/Projects/raveloxzemu/src/main.c",
+  "output": "CMakeFiles/raveloxzemu.dir/src/main.c.o"
+},
+{
+  "directory": "/Users/dkelly/Projects/raveloxzemu",
+  "command": "/usr/bin/cc  -I/Users/dkelly/Projects/raveloxzemu/include -std=c17 -arch arm64 -o CMakeFiles/raveloxzemu.dir/src/register.c.o -c /Users/dkelly/Projects/raveloxzemu/src/register.c",
+  "file": "/Users/dkelly/Projects/raveloxzemu/src/register.c",
+  "output": "CMakeFiles/raveloxzemu.dir/src/register.c.o"
+}
+]
