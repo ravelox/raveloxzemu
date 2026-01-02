@@ -140,3 +140,18 @@ uint16_t register_get_ix(void) { return special->ix; }
 uint16_t register_get_iy(void) { return special->iy; }
 uint16_t register_get_pc(void) { return special->pc; }
 uint16_t register_get_sp(void) { return special->sp; }
+
+void register_inc_pc(void) {
+    if( !special ) return;
+    special->pc++;
+}
+
+void register_dec_sp(void) {
+    if( !special ) return;
+    special->sp--;
+}
+
+void register_inc_sp(void) {
+    if( ! special ) return;
+    special->sp++;
+}

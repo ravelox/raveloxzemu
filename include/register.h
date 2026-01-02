@@ -112,4 +112,6 @@ uint16_t register_get_sp(void);
 void register_general_swap(void);
 void register_special_swap(void);
 
+void register_inc_pc(void);
+
 #endif
