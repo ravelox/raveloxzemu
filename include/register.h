@@ -88,6 +88,27 @@ void register_set_iy(uint16_t value);
 void register_set_pc(uint16_t value);
 void register_set_sp(uint16_t value);
 
+uint8_t register_get_a(void);
+uint8_t register_get_f(void);
+uint8_t register_get_b(void);
+uint8_t register_get_c(void);
+uint8_t register_get_d(void);
+uint8_t register_get_e(void);
+uint8_t register_get_h(void);
+uint8_t register_get_l(void);
+
+uint16_t register_get_af(void);
+uint16_t register_get_bc(void);
+uint16_t register_get_de(void);
+uint16_t register_get_hl(void);
+
+uint8_t register_get_i(void);
+uint8_t register_get_r(void);
+uint16_t register_get_ix(void);
+uint16_t register_get_iy(void);
+uint16_t register_get_pc(void);
+uint16_t register_get_sp(void);
+
 void register_general_swap(void);
 void register_special_swap(void);
 

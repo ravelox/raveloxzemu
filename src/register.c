@@ -116,3 +116,27 @@ void register_set_pc(uint16_t value) { special->pc = value; }
 void register_set_sp(uint16_t value) { special->sp = value; }
 void register_set_ix(uint16_t value) { special->ix = value; }
 void register_set_iy(uint16_t value) { special->iy = value; }
+
+// 8-bit getters
+uint8_t register_get_a(void) { return general->reg_af.a; }
+uint8_t register_get_f(void) { return general->reg_af.reg_f.f; }
+uint8_t register_get_b(void) { return general->reg_bc.b; }
+uint8_t register_get_c(void) { return general->reg_bc.c; }
+uint8_t register_get_d(void) { return general->reg_de.d; }
+uint8_t register_get_e(void) { return general->reg_de.e; }
+uint8_t register_get_h(void) { return general->reg_hl.h; }
+uint8_t register_get_l(void) { return general->reg_hl.l; }
+
+// 16-bit getters
+uint16_t register_get_af(void) { return general->reg_af.af; }
+uint16_t register_get_bc(void) { return general->reg_bc.bc; }
+uint16_t register_get_de(void) { return general->reg_de.de; }
+uint16_t register_get_hl(void) { return general->reg_hl.hl; }
+
+// Special register getters
+uint8_t register_get_i(void) { return special->i; }
+uint8_t register_get_r(void) { return special->r; }
+uint16_t register_get_ix(void) { return special->ix; }
+uint16_t register_get_iy(void) { return special->iy; }
+uint16_t register_get_pc(void) { return special->pc; }
+uint16_t register_get_sp(void) { return special->sp; }
