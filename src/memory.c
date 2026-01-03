@@ -38,9 +38,26 @@ int memory_destroy(void) {
 }
 
 uint16_t memory_get_size(void) {
-    if( ! mem ) {
-        fprintf(stderr, "Memory not allocated\n");
-        return 0;
-    }
-    return mem->size;
+  if (!mem) {
+    fprintf(stderr, "Memory not allocated\n");
+    return 0;
+  }
+  return mem->size;
+}
+
+int memory_set(uint16_t address, uint8_t value) {
+  if (!mem)
+    return -1;
+  if (!mem->memory)
+    return -1;
+
+  mem->memory[address] = value;
+  return 0;
+}
+
+uint8_t memory_get(uint16_t address) {
+    if( ! mem) return 0;
+    if( ! mem->memory ) return 0;
+
+    return mem->memory[address];
 }

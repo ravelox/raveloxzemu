@@ -7,10 +7,9 @@
 #include "register.h"
 
 #define CLOCK_DELAY 0
-#define MEMORY_SIZE (uint16_t) (64*1024)-1
+#define MEMORY_SIZE (uint16_t)(64 * 1024) - 1
 
 int main(int argc, char *argv[]) {
-
   if (register_init() != 0) {
     fprintf(stderr, "Cannot initialise registers\n");
     return -1;
@@ -26,16 +25,21 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  fprintf( stdout, "Memory size: %04x\n", memory_get_size());
+  fprintf(stdout, "Memory size: %04x\n", memory_get_size());
+
   // Set the stack pointer to the top of memory
-  register_set_sp( memory_get_size() );
+  register_value_set(REG_SP, memory_get_size());
 
   while (1) {
     if (!clock_available())
       break;
+
+    uint8_t instruction = memory_get(register_value_get(REG_PC));
+    register_inc(REG_PC);
+
     register_display();
-    clock_delay();
-    register_inc_pc();
+    if (clock_delay() == -1)
+      break;
   }
 
   clock_destroy();

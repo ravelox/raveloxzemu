@@ -22,5 +22,11 @@
   "command": "/usr/bin/cc  -I/Users/dkelly/Projects/raveloxzemu/include -std=c17 -arch arm64 -o CMakeFiles/raveloxzemu.dir/src/memory.c.o -c /Users/dkelly/Projects/raveloxzemu/src/memory.c",
   "file": "/Users/dkelly/Projects/raveloxzemu/src/memory.c",
   "output": "CMakeFiles/raveloxzemu.dir/src/memory.c.o"
+},
+{
+  "directory": "/Users/dkelly/Projects/raveloxzemu",
+  "command": "/usr/bin/cc  -I/Users/dkelly/Projects/raveloxzemu/include -std=c17 -arch arm64 -o CMakeFiles/raveloxzemu.dir/src/instruction.c.o -c /Users/dkelly/Projects/raveloxzemu/src/instruction.c",
+  "file": "/Users/dkelly/Projects/raveloxzemu/src/instruction.c",
+  "output": "CMakeFiles/raveloxzemu.dir/src/instruction.c.o"
 }
 ]

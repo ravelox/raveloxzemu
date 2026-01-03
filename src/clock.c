@@ -24,29 +24,26 @@ int clock_destroy(void) {
   return 0;
 }
 
-int clock_available(void) {
-  fprintf(stdout, "Clock: %p\n", z80_clock);
-  return (z80_clock != NULL);
-}
+int clock_available(void) { return (z80_clock != NULL); }
 
 // Fake delay function
 int clock_delay(void) {
 
-  fprintf(stdout, "Clock Delay: %04d\n", z80_clock->delay);
   // If delay is 0, wait until enter key is pressed
   if (z80_clock->delay == 0) {
-    fprintf(stdout, ">");
-    while( getc(stdin) != 0x0a ) ;
+    int input_char = getc(stdin);
+
+    while (1) {
+      if (input_char == 0x0a)
+        return 0;
+      if (input_char == 'q')
+        return -1;
+    }
   } else {
-    if (clock_has_t_state()) {
-      for (uint32_t i = 0; i < z80_clock->delay; i++) {
-        continue;
-      }
+    for (uint32_t i = 0; i < z80_clock->delay; i++) {
+      continue;
     }
   }
-
-  if (z80_clock->t > 0)
-    (z80_clock->t)--;
 
   return 0;
 }

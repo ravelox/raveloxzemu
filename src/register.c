@@ -5,153 +5,232 @@
 
 #include "register.h"
 
-static z80_general_register_t *general;
-static z80_general_register_t *alt_general;
+static const uint8_t _reg_map[] = {
+    REG_B,
+    REG_C,
+    REG_D,
+    REG_E,
+    REG_F,
+    REG_H,
+    REG_L,
+    REG_A
+};
 
-static z80_special_register_t *special;
-static z80_special_register_t *alt_special;
+
+static z80_register_t *registers;
+static z80_register_t *alt_registers;
 
 int register_init(void) {
 
-  general = (z80_general_register_t *)malloc(sizeof(z80_general_register_t));
-  alt_general =
-      (z80_general_register_t *)malloc(sizeof(z80_general_register_t));
-  special = (z80_special_register_t *)malloc(sizeof(z80_special_register_t));
-  alt_special =
-      (z80_special_register_t *)malloc(sizeof(z80_special_register_t));
+  size_t register_size = sizeof(z80_register_t) * REG_COUNT;
 
-  if (!general || !alt_general || !special || !alt_special) {
-    fprintf(stderr, "Cannot allocate memory for registers\n");
+  registers = (z80_register_t *)malloc(register_size);
+  alt_registers = (z80_register_t *)malloc(register_size);
+
+  if (!registers || !alt_registers)
     return -1;
-  }
 
-  memset(general, 0, sizeof(z80_general_register_t));
-  memset(alt_general, 0, sizeof(z80_general_register_t));
-  memset(special, 0, sizeof(z80_special_register_t));
-  memset(alt_special, 0, sizeof(z80_special_register_t));
+  memset(registers, 0, register_size);
+  memset(alt_registers, 0, register_size);
 
   return 0;
 }
 
 int register_destroy(void) {
-  if (general)
-    free(general);
-  if (alt_general)
-    free(alt_general);
-  if (special)
-    free(special);
-  if (alt_special)
-    free(alt_special);
-
+  if (registers)
+    free(registers);
+  if (alt_registers)
+    free(alt_registers);
   return 0;
 }
 
-void register_general_swap(void) {
-  z80_general_register_t *temp;
+static int _register_value_set(z80_register_t *z80_registers, uint8_t index,
+                         uint16_t value) {
+  uint8_t real_index = index & REG_MASK;
 
-  temp = general;
-  general = alt_general;
-  alt_general = temp;
+  if (real_index >= REG_COUNT)
+    return -1;
+
+  if (index & HIGH_BYTE) {
+    z80_registers[real_index].bytes.high = value;
+  } else if (index & LOW_BYTE) {
+    z80_registers[real_index].bytes.low = value;
+  } else {
+    z80_registers[real_index].word = value;
+  }
+  return 0;
 }
 
-void register_special_swap(void) {
-  z80_special_register_t *temp;
+int register_value_set(uint8_t index, uint16_t value) {
+  uint8_t real_index = index & REG_MASK;
 
-  temp = special;
-  special = alt_special;
-  alt_special = temp;
+  if (real_index >= REG_COUNT)
+    return -1;
+
+  if (index & HIGH_BYTE) {
+    registers[real_index].bytes.high = value;
+  } else if (index & LOW_BYTE) {
+    registers[real_index].bytes.low = value;
+  } else {
+    registers[real_index].word = value;
+  }
+  return 0;
 }
 
-static void register_special_display(z80_special_register_t *reg) {
-  fprintf(stdout, "PC: %04d\tSP: %04d\n", reg->pc, reg->sp);
-  fprintf(stdout, "IX: %04d\tIY: %04d\n", reg->ix, reg->iy);
-  fprintf(stdout, " I: %02d  \t R: %02d\n", reg->i, reg->r);
+uint16_t _register_value_get(z80_register_t *z80_registers, uint8_t index) {
+  uint8_t real_index = index & REG_MASK;
+  uint16_t return_value = 0;
+
+  if (real_index >= REG_COUNT)
+    return return_value;
+
+  if (index & HIGH_BYTE) {
+    return_value = z80_registers[real_index].bytes.high;
+  } else if (index & LOW_BYTE) {
+    return_value = z80_registers[real_index].bytes.low;
+  } else {
+    return_value = z80_registers[real_index].word;
+  }
+  return return_value;
 }
 
-static void register_general_display(z80_general_register_t *reg) {
-  fprintf(stdout, "AF: %04d\tA: %02d\tF: %02d\n", reg->reg_af.af, reg->reg_af.a,
-          reg->reg_af.reg_f.f);
-  fprintf(stdout, "Flags:");
-  fprintf(stdout, "\t S:%d", reg->reg_af.reg_f.flags.s);
-  fprintf(stdout, "\t Z:%d", reg->reg_af.reg_f.flags.z);
-  fprintf(stdout, "\t H:%d", reg->reg_af.reg_f.flags.h);
-  fprintf(stdout, "\tPV:%d", reg->reg_af.reg_f.flags.pv);
-  fprintf(stdout, "\t N:%d", reg->reg_af.reg_f.flags.n);
-  fprintf(stdout, "\t C:%d", reg->reg_af.reg_f.flags.c);
+uint16_t register_value_get(uint8_t index) {
+  uint8_t real_index = index & REG_MASK;
+  uint16_t return_value = 0;
+
+  if (real_index >= REG_COUNT)
+    return return_value;
+
+  if (index & HIGH_BYTE) {
+    return_value = registers[real_index].bytes.high;
+  } else if (index & LOW_BYTE) {
+    return_value = registers[real_index].bytes.low;
+  } else {
+    return_value = registers[real_index].word;
+  }
+  return return_value;
+}
+
+void register_inc(uint8_t index) {
+  uint8_t real_index = index & REG_MASK;
+
+  if (real_index >= REG_COUNT)
+    return;
+
+  if (index & HIGH_BYTE) {
+    registers[real_index].bytes.high++;
+  } else if (index & LOW_BYTE) {
+    registers[real_index].bytes.low++;
+  } else {
+    registers[real_index].word++;
+  }
+  return;
+}
+
+void register_dec(uint8_t index) {
+  uint8_t real_index = index & REG_MASK;
+
+  if (real_index >= REG_COUNT)
+    return;
+
+  if (index & HIGH_BYTE) {
+    registers[real_index].bytes.high--;
+  } else if (index & LOW_BYTE) {
+    registers[real_index].bytes.low--;
+  } else {
+    registers[real_index].word--;
+  }
+  return;
+}
+
+static void _flag_display(uint16_t flags) {
+  fprintf(stdout, "\tS:%1d Z:%1d H:%1d PV:%1d N:%1d C:%1d\n",
+          flags & (1<<FLAG_S) ? 1 : 0, flags & (1<<FLAG_Z) ? 1 : 0,
+          flags & (1<<FLAG_H) ? 1 : 0, flags & (1<<FLAG_PV) ? 1 : 0,
+          flags & (1<<FLAG_N) ? 1 : 0, flags & (1<<FLAG_C) ? 1 : 0);
+
+  if (FLAG_IS_CARRY(flags))
+    fprintf(stdout, "\tCarry");
+  if (FLAG_IS_ZERO(flags))
+    fprintf(stdout, "\tZero");
+  fprintf(stdout, "\t%s", FLAG_IS_EVEN(flags) ? "Even" : "Odd");
+  if (FLAG_IS_OVERFLOW(flags))
+    fprintf(stdout, "\tOverflow");
+  if (FLAG_IS_HALF(flags))
+    fprintf(stdout, "\tHalf-Carry");
+  if (FLAG_IS_NEGATIVE(flags))
+    fprintf(stdout, "\tNegative");
+
   fprintf(stdout, "\n");
-  fprintf(stdout, "BC: %04d\tB: %02d\tC: %02d\n", reg->reg_bc.bc, reg->reg_bc.b,
-          reg->reg_bc.c);
-  fprintf(stdout, "DE: %04d\tD: %02d\tE: %02d\n", reg->reg_de.de, reg->reg_de.d,
-          reg->reg_de.e);
-  fprintf(stdout, "HL: %04d\tH: %02d\tL: %02d\n", reg->reg_hl.hl, reg->reg_hl.h,
-          reg->reg_hl.l);
+}
+
+static void _register_display(z80_register_t *z80_registers, int alt) {
+  fprintf(stdout, "=========\n");
+  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "AF'" : " AF",
+          _register_value_get(z80_registers, REG_AF), alt ? "A'" : " A",
+          _register_value_get(z80_registers, REG_A), alt ? "F'" : " F",
+          _register_value_get(z80_registers, REG_F));
+  _flag_display(_register_value_get(z80_registers, REG_F) & 0xFF);
+  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "BC'" : " BC",
+          _register_value_get(z80_registers, REG_BC), alt ? "B'" : " B",
+          _register_value_get(z80_registers, REG_D), alt ? "C'" : " C",
+          _register_value_get(z80_registers, REG_E));
+  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "HL'" : " HL",
+          _register_value_get(z80_registers, REG_HL), alt ? "H'" : " H",
+          _register_value_get(z80_registers, REG_H), alt ? "L'" : " L",
+          _register_value_get(z80_registers, REG_L));
+  fprintf(stdout, "%s: %04X", alt ? "PC'" : " PC",
+          _register_value_get(z80_registers, REG_PC));
+  fprintf(stdout, "\t%s: %04X\n", alt ? "SP'" : " SP",
+          _register_value_get(z80_registers, REG_SP));
+  fprintf(stdout, "%s: %04X", alt ? "IX'" : " IX",
+          _register_value_get(z80_registers, REG_IX));
+  fprintf(stdout, "\t%s: %04X\n", alt ? "IY'" : " IY",
+          _register_value_get(z80_registers, REG_IY));
+  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "IR'" : " IR",
+          _register_value_get(z80_registers, REG_IR), alt ? "I'" : " I",
+          _register_value_get(z80_registers, REG_I), alt ? "R'" : " R",
+          _register_value_get(z80_registers, REG_R));
+}
+
+void register_swap(void) {
+  z80_register_t *temp;
+
+  temp = registers;
+  registers = alt_registers;
+  alt_registers = temp;
 }
 
 void register_display(void) {
-  register_special_display(special);
-  fprintf(stdout, "\nALT:\n");
-  register_special_display(alt_special);
-  fprintf(stdout, "\n\n");
-  register_general_display(general);
-  fprintf(stdout, "\nALT\n");
-  register_general_display(alt_general);
+  _register_display(registers, REG_FALSE);
+  _register_display(alt_registers, REG_TRUE);
 }
 
-// 8-bit registers
-void register_set_a(uint8_t value) { general->reg_af.a = value; }
-void register_set_f(uint8_t value) { general->reg_af.reg_f.f = value; }
-void register_set_b(uint8_t value) { general->reg_bc.b = value; }
-void register_set_c(uint8_t value) { general->reg_bc.c = value; }
-void register_set_d(uint8_t value) { general->reg_de.d = value; }
-void register_set_e(uint8_t value) { general->reg_de.e = value; }
-void register_set_h(uint8_t value) { general->reg_hl.h = value; }
-void register_set_l(uint8_t value) { general->reg_hl.l = value; }
-
-// 16-bit registers
-void register_set_af(uint16_t value) { general->reg_af.af = value; }
-void register_set_bc(uint16_t value) { general->reg_bc.bc = value; }
-void register_set_de(uint16_t value) { general->reg_de.de = value; }
-void register_set_hl(uint16_t value) { general->reg_hl.hl = value; }
-void register_set_pc(uint16_t value) { special->pc = value; }
-void register_set_sp(uint16_t value) { special->sp = value; }
-void register_set_ix(uint16_t value) { special->ix = value; }
-void register_set_iy(uint16_t value) { special->iy = value; }
-
-// 8-bit getters
-uint8_t register_get_a(void) { return general->reg_af.a; }
-uint8_t register_get_f(void) { return general->reg_af.reg_f.f; }
-uint8_t register_get_b(void) { return general->reg_bc.b; }
-uint8_t register_get_c(void) { return general->reg_bc.c; }
-uint8_t register_get_d(void) { return general->reg_de.d; }
-uint8_t register_get_e(void) { return general->reg_de.e; }
-uint8_t register_get_h(void) { return general->reg_hl.h; }
-uint8_t register_get_l(void) { return general->reg_hl.l; }
-
-// 16-bit getters
-uint16_t register_get_af(void) { return general->reg_af.af; }
-uint16_t register_get_bc(void) { return general->reg_bc.bc; }
-uint16_t register_get_de(void) { return general->reg_de.de; }
-uint16_t register_get_hl(void) { return general->reg_hl.hl; }
-
-// Special register getters
-uint8_t register_get_i(void) { return special->i; }
-uint8_t register_get_r(void) { return special->r; }
-uint16_t register_get_ix(void) { return special->ix; }
-uint16_t register_get_iy(void) { return special->iy; }
-uint16_t register_get_pc(void) { return special->pc; }
-uint16_t register_get_sp(void) { return special->sp; }
-
-void register_inc_pc(void) {
-    if( !special ) return;
-    special->pc++;
+void register_bit_set(uint8_t index, uint8_t bit) {
+      uint8_t current_value = register_value_get(index) & 0x00FF;
+  uint8_t new_value = current_value | (1<<bit);
+  register_value_set(index, new_value);
+}
+void register_bit_unset(uint8_t index, uint8_t bit) {
+      uint8_t current_value = register_value_get(REG_F) & 0x00FF;
+  uint8_t new_value = current_value & ~(1<<bit);
+  register_value_set(index, new_value);
 }
 
-void register_dec_sp(void) {
-    if( !special ) return;
-    special->sp--;
+uint8_t register_bit_get(uint8_t index, uint8_t bit) {
+    uint8_t current_value = register_value_get(REG_F) & 0x00FF;
+    return ((current_value & (1<<bit)) > 0) ; 
 }
 
-void register_inc_sp(void) {
-    if( ! special ) return;
-    special->sp++;
+void register_flag_set(uint8_t flag) {
+    register_bit_set( REG_F, flag);
+}
+
+void register_flag_unset(uint8_t flag) {
+    register_bit_set(REG_F, flag);
+}
+
+uint8_t register_map(uint8_t index) {
+    if( index >= sizeof( _reg_map )) return 0xFF;
+    return _reg_map[ index ];
 }

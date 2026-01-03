@@ -6,112 +6,75 @@
 #include <stdlib.h>
 
 typedef union {
-  uint16_t af;
+  uint16_t word;
   struct {
-    uint8_t a;
-    union {
-      uint8_t f;
-      struct {
-        uint8_t s : 1;
-        uint8_t z : 1;
-        uint8_t unused1 : 1;
-        uint8_t h : 1;
-        uint8_t unused2 : 1;
-        uint8_t pv : 1;
-        uint8_t n : 1;
-        uint8_t c : 1;
-      } flags;
-    } reg_f;
-  };
-} reg_af_t;
+    uint8_t low;
+    uint8_t high;
+  } bytes;
+} z80_register_t;
 
-typedef union {
-  uint16_t bc;
-  struct {
-    uint8_t b;
-    uint8_t c;
-  };
-} reg_bc_t;
+#define HIGH_BYTE 0x80
+#define LOW_BYTE 0x40
+#define REG_AF 0
+#define REG_A (HIGH_BYTE | REG_AF)
+#define REG_F (LOW_BYTE | REG_AF)
+#define REG_BC 1
+#define REG_B (HIGH_BYTE | REG_BC)
+#define REG_C (LOW_BYTE | REG_BC)
+#define REG_DE 2
+#define REG_D (HIGH_BYTE | REG_DE)
+#define REG_E (LOW_BYTE | REG_DE)
+#define REG_HL 3
+#define REG_H (HIGH_BYTE | REG_HL)
+#define REG_L (LOW_BYTE | REG_HL)
+#define REG_IR 4
+#define REG_I (HIGH_BYTE | REG_IR)
+#define REG_R (LOW_BYTE | REG_IR)
+#define REG_IX 5
+#define REG_IY 6
+#define REG_SP 7
+#define REG_PC 8
 
-typedef union {
-  uint16_t de;
-  struct {
-    uint8_t d;
-    uint8_t e;
-  };
-} reg_de_t;
+#define REG_COUNT 9
+#define REG_MASK 0x0F
 
-typedef union {
-  uint16_t hl;
-  struct {
-    uint8_t h;
-    uint8_t l;
-  };
-} reg_hl_t;
+#define FLAG_S 7
+#define FLAG_Z 6
+#define FLAG_H 4
+#define FLAG_PV 2
+#define FLAG_N 1
+#define FLAG_C 0
 
-typedef struct {
-  reg_af_t reg_af;
-  reg_bc_t reg_bc;
-  reg_de_t reg_de;
-  reg_hl_t reg_hl;
-} z80_general_register_t;
+#define FLAG_IS_NEGATIVE(f) ((f & 0x00FF) & (1<<FLAG_N))
+#define FLAG_IS_ZERO(f) ((f & 0x00FF) & (1<<FLAG_Z))
+#define FLAG_IS_HALF(f) ((f & 0x00FF) & (1<<FLAG_H))
+#define FLAG_IS_OVERFLOW(f) ((f & 0x00FF) & (1<<FLAG_PV))
+#define FLAG_IS_EVEN(f) ((f & 0x00FF) & (1<<FLAG_PV))
+#define FLAG_IS_SUBTRACT(f) ((f & 0x00FF) & (1<<FLAG_S))
+#define FLAG_IS_CARRY(f) ((f & 0x00FF) & (1<<FLAG_C))
 
-typedef struct {
-  uint8_t i;
-  uint8_t r;
-  uint16_t ix;
-  uint16_t iy;
-  uint16_t sp;
-  uint16_t pc;
-} z80_special_register_t;
+#define REG_TRUE (1 == 1)
+#define REG_FALSE (1 == 0)
 
 int register_init(void);
-void register_display(void);
 int register_destroy(void);
 
-void register_set_a(uint8_t value);
-void register_set_f(uint8_t value);
-void register_set_b(uint8_t value);
-void register_set_c(uint8_t value);
-void register_set_d(uint8_t value);
-void register_set_e(uint8_t value);
-void register_set_h(uint8_t value);
-void register_set_l(uint8_t value);
+void register_display(void);
 
-void register_set_af(uint16_t value);
-void register_set_bc(uint16_t value);
-void register_set_de(uint16_t value);
-void register_set_hl(uint16_t value);
+int register_value_set(uint8_t, uint16_t);
+uint16_t register_value_get(uint8_t);
 
-void register_set_ix(uint16_t value);
-void register_set_iy(uint16_t value);
-void register_set_pc(uint16_t value);
-void register_set_sp(uint16_t value);
+void register_inc(uint8_t);
+void register_dec(uint8_t);
 
-uint8_t register_get_a(void);
-uint8_t register_get_f(void);
-uint8_t register_get_b(void);
-uint8_t register_get_c(void);
-uint8_t register_get_d(void);
-uint8_t register_get_e(void);
-uint8_t register_get_h(void);
-uint8_t register_get_l(void);
+void register_flag_set(uint8_t);
+void register_flag_unset(uint8_t);
 
-uint16_t register_get_af(void);
-uint16_t register_get_bc(void);
-uint16_t register_get_de(void);
-uint16_t register_get_hl(void);
+void register_bit_set(uint8_t, uint8_t);
+void register_bit_unset(uint8_t, uint8_t);
+uint8_t register_bit_get(uint8_t, uint8_t);
 
-uint8_t register_get_i(void);
-uint8_t register_get_r(void);
-uint16_t register_get_ix(void);
-uint16_t register_get_iy(void);
-uint16_t register_get_pc(void);
-uint16_t register_get_sp(void);
-
-void register_general_swap(void);
-void register_special_swap(void);
-
-void register_inc_pc(void);
+void register_swap(void);
+uint8_t register_map(uint8_t index);
 
 #endif

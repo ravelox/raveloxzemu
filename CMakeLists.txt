@@ -12,6 +12,7 @@ set(SOURCES
     src/register.c
     src/clock.c
     src/memory.c
+    src/instruction.c
 )
 
 add_executable(raveloxzemu ${SOURCES})
