@@ -1,6 +1,6 @@
 # raveloxzemu
 
-A small C-based Z80 emulator experiment. Currently includes register definitions, register helpers, a simple clock, memory allocation, and a minimal executable that prints the register state on each step.
+A small C-based Z80 emulator experiment. Currently includes register definitions/helpers, a simple clock, memory allocation, an instruction table stub, and a minimal executable that prints the register state on each step.
 
 ## Build
 
@@ -19,14 +19,14 @@ The resulting binary is placed in `build/`.
 ./build/raveloxzemu
 ```
 
-The binary initializes the registers, clock (step mode by default), and 64KB of memory, then repeatedly dumps the register state while incrementing `PC`. With the default `CLOCK_DELAY` of 0 you advance each step by pressing Enter.
+The binary initializes the registers, clock (step mode by default), and 64KB of memory, then repeatedly fetches an opcode from memory at `PC`, dumps the register state, and increments `PC`. With the default `CLOCK_DELAY` of 0 you advance each step by pressing Enter.
 
 ## Register helpers
 
 - `register_init`/`register_destroy` allocate and clean up register banks; call them before and after use.
-- `register_display` prints general and special registers for both active and alternate banks, including the Z80 flag bits (S, Z, H, PV, N, C).
-- Setter and getter helpers exist for individual 8-bit and 16-bit registers, plus swap functions for toggling between the primary and alternate banks.
-- `register_inc_pc` moves the program counter forward by one; stack pointer helpers (`register_set_sp`, `register_get_sp`) let you target the top of memory for the stack.
+- `register_display` prints general and special registers for both active and alternate banks, including Z80 flags (S, Z, H, PV, N, C) via a byte/word-accessible API.
+- `register_value_set`/`register_value_get` handle 8-bit and 16-bit registers using the provided `REG_*` constants; `register_inc`/`register_dec` adjust registers and `register_swap` swaps the primary/alternate banks.
+- Flag helpers (`register_flag_set`, `register_flag_unset`, `register_bit_*`) operate on `F`.
 
 ## Clock
 
@@ -37,6 +37,11 @@ The binary initializes the registers, clock (step mode by default), and 64KB of 
 
 - `memory_init`/`memory_destroy` allocate and free a contiguous memory block.
 - `memory_get_size` returns the configured memory size; used to seed the stack pointer.
+- `memory_set`/`memory_get` read/write bytes at addresses; `memory_load` allows bulk loading.
+
+## Instructions
+
+- `instruction.c` holds a starter opcode table; raw opcode listings live in `src/op_codes.txt`.
 
 ## Project layout
 
