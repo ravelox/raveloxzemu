@@ -3,18 +3,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "memory.h"
 #include "register.h"
 
-static const uint8_t _reg_map[] = {
-    REG_B,
-    REG_C,
-    REG_D,
-    REG_E,
-    REG_H,
-    REG_L,
-    REG_A
-};
-
+static const uint8_t _reg_map[] = {REG_B, REG_C, REG_D, REG_E,
+                                   REG_H, REG_L, REG_A};
 
 static z80_register_t *registers;
 static z80_register_t *alt_registers;
@@ -44,7 +37,7 @@ int register_destroy(void) {
 }
 
 static int _register_value_set(z80_register_t *z80_registers, uint8_t index,
-                         uint16_t value) {
+                               uint16_t value) {
   uint8_t real_index = index & REG_MASK;
 
   if (real_index >= REG_COUNT)
@@ -144,9 +137,9 @@ void register_dec(uint8_t index) {
 
 static void _flag_display(uint16_t flags) {
   fprintf(stdout, "\tS:%1d Z:%1d H:%1d PV:%1d N:%1d C:%1d\n",
-          flags & (1<<FLAG_S) ? 1 : 0, flags & (1<<FLAG_Z) ? 1 : 0,
-          flags & (1<<FLAG_H) ? 1 : 0, flags & (1<<FLAG_PV) ? 1 : 0,
-          flags & (1<<FLAG_N) ? 1 : 0, flags & (1<<FLAG_C) ? 1 : 0);
+          flags & (1 << FLAG_S) ? 1 : 0, flags & (1 << FLAG_Z) ? 1 : 0,
+          flags & (1 << FLAG_H) ? 1 : 0, flags & (1 << FLAG_PV) ? 1 : 0,
+          flags & (1 << FLAG_N) ? 1 : 0, flags & (1 << FLAG_C) ? 1 : 0);
 
   if (FLAG_IS_CARRY(flags))
     fprintf(stdout, "\tCarry");
@@ -192,13 +185,48 @@ static void _register_display(z80_register_t *z80_registers, int alt) {
           _register_value_get(z80_registers, REG_R));
 }
 
-void register_swap(void) {
-  z80_register_t *temp;
-
-  temp = registers;
-  registers = alt_registers;
-  alt_registers = temp;
+void register_swap_single(uint8_t reg) {
+  z80_register_t temp = registers[reg];
+  registers[reg] = alt_registers[reg];
+  alt_registers[reg] = temp;
 }
+
+void register_exx(void) {
+  z80_register_t temp;
+  register_swap_single(REG_BC);
+  register_swap_single(REG_DE);
+  register_swap_single(REG_HL);
+}
+
+void register_ex_de_hl(void) {
+  z80_register_t temp = registers[REG_DE];
+  registers[REG_DE] = registers[REG_HL];
+  registers[REG_HL] = temp;
+}
+
+void register_ex_af_af_alt(void) {
+  z80_register_t temp = registers[REG_AF];
+  registers[REG_AF] = alt_registers[REG_AF];
+  alt_registers[REG_AF] = temp;
+}
+
+static void register_ex_sp_rr(uint8_t reg) {
+  uint16_t sp = register_value_get(REG_SP);
+  uint8_t low = memory_get(sp);
+  uint8_t high = memory_get((uint16_t)(sp + 1));
+  uint16_t mem_value = (uint16_t)((high << 8) | low);
+  uint16_t reg_value = register_value_get(reg);
+
+  register_value_set(reg, mem_value);
+  memory_set(sp, (uint8_t)(reg_value & 0x00FF));
+  memory_set((uint16_t)(sp + 1), (uint8_t)((reg_value >> 8) & 0x00FF));
+}
+
+void register_ex_sp_hl(void) { register_ex_sp_rr(REG_HL); }
+
+void register_ex_sp_ix(void) { register_ex_sp_rr(REG_IX); }
+
+void register_ex_sp_iy(void) { register_ex_sp_rr(REG_IY); }
 
 void register_display(void) {
   _register_display(registers, REG_FALSE);
@@ -206,30 +234,27 @@ void register_display(void) {
 }
 
 void register_bit_set(uint8_t index, uint8_t bit) {
-      uint8_t current_value = register_value_get(index) & 0x00FF;
-  uint8_t new_value = current_value | (1<<bit);
+  uint8_t current_value = register_value_get(index) & 0x00FF;
+  uint8_t new_value = current_value | (1 << bit);
   register_value_set(index, new_value);
 }
 void register_bit_unset(uint8_t index, uint8_t bit) {
-      uint8_t current_value = register_value_get(REG_F) & 0x00FF;
-  uint8_t new_value = current_value & ~(1<<bit);
+  uint8_t current_value = register_value_get(REG_F) & 0x00FF;
+  uint8_t new_value = current_value & ~(1 << bit);
   register_value_set(index, new_value);
 }
 
 uint8_t register_bit_get(uint8_t index, uint8_t bit) {
-    uint8_t current_value = register_value_get(REG_F) & 0x00FF;
-    return ((current_value & (1<<bit)) > 0) ; 
+  uint8_t current_value = register_value_get(REG_F) & 0x00FF;
+  return ((current_value & (1 << bit)) > 0);
 }
 
-void register_flag_set(uint8_t flag) {
-    register_bit_set( REG_F, flag);
-}
+void register_flag_set(uint8_t flag) { register_bit_set(REG_F, flag); }
 
-void register_flag_unset(uint8_t flag) {
-    register_bit_set(REG_F, flag);
-}
+void register_flag_unset(uint8_t flag) { register_bit_set(REG_F, flag); }
 
 uint8_t register_map(uint8_t index) {
-    if( index >= sizeof( _reg_map )) return 0xFF;
-    return _reg_map[ index ];
+  if (index >= sizeof(_reg_map))
+    return 0xFF;
+  return _reg_map[index];
 }

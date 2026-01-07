@@ -22,6 +22,7 @@ typedef enum {
     I_LOAD_R_REG_A,
     I_BLKT,
     I_BLKS,
+    I_EX,
     I_U // Undefined or unused
 } instruction_group_t;
 

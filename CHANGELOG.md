@@ -9,6 +9,10 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.4] - 2026-01-07
+- Add EX helpers for register and stack exchanges.
+- Map EX opcodes and dispatch them in the instruction switch.
+
 ## [0.4.3] - 2026-01-06
 - Add opcode labels to the instruction map for easier identification.
 - Dispatch block transfer/search instructions and correct flag/repeat behavior.

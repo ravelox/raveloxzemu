@@ -151,6 +151,28 @@ int main(int argc, char *argv[]) {
     case I_BLKS:
       inst_blks(op_code);
       break;
+    case I_EX:
+      switch (op_code) {
+      case 0x08:
+        register_ex_af_af_alt();
+        break;
+      case 0xE3:
+        register_ex_sp_hl();
+        break;
+      case 0xEB:
+        register_ex_de_hl();
+        break;
+      case 0xDDE3:
+        register_ex_sp_ix();
+        break;
+      case 0xFDE3:
+        register_ex_sp_iy();
+        break;
+      default:
+        fprintf(stderr, "op_code: %04x\t Incorrect EX group\n", op_code);
+        break;
+      }
+      break;
     default:
       fprintf(stderr, "Undefined opcode: %04x\t%u\n", op_code, group);
       break;

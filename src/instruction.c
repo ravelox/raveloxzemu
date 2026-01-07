@@ -10,6 +10,7 @@ static instruction_map_t instruction_map[] = {
     {0x00, I_NOP, "NOP"},
     {0x02, I_LOAD_RR_A, "LD (BC/DE),A"},
     {0x06, I_LOAD_R_N, "LD r,n"},
+    {0x08, I_EX, "EX AF,AF'"},
     {0x0A, I_LOAD_RR_A, "LD (BC/DE),A"},
     {0x0E, I_LOAD_R_N, "LD r,n"},
     {0x12, I_LOAD_RR_A, "LD (BC/DE),A"},
@@ -101,6 +102,9 @@ static instruction_map_t instruction_map[] = {
     {0xDD77, I_LOAD_IDX_R, "LD (IX/IY+d),r"},
     {0xDD7E, I_LOAD_IDX_R, "LD (IX/IY+d),r"},
     {0xDD7E, I_LOAD_R_IDX, "LD r,(IX/IY+d)"},
+    {0xDDE3, I_EX, "EX (SP),IX"},
+    {0xE3, I_EX, "EX (SP),HL"},
+    {0xEB, I_EX, "EX DE,HL"},
     {0xED47, I_LOAD_A_I, "LD A,I"},
     {0xED4F, I_LOAD_A_R_REG, "LD A,R"},
     {0xED57, I_LOAD_I_A, "LD I,A"},
@@ -129,6 +133,7 @@ static instruction_map_t instruction_map[] = {
     {0xFD77, I_LOAD_IDX_R, "LD (IX/IY+d),r"},
     {0xFD7E, I_LOAD_IDX_R, "LD (IX/IY+d),r"},
     {0xFD7E, I_LOAD_R_IDX, "LD r,(IX/IY+d)"},
+    {0xFDE3, I_EX, "EX (SP),IY"},
     {0xFF, I_U, "UNDEFINED"}};
 
 instruction_group_t instruction_group_get(uint16_t op_code) {

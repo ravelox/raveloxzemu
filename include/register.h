@@ -74,7 +74,14 @@ void register_bit_set(uint8_t, uint8_t);
 void register_bit_unset(uint8_t, uint8_t);
 uint8_t register_bit_get(uint8_t, uint8_t);
 
-void register_swap(void);
 uint8_t register_map(uint8_t index);
+
+void register_swap_single(uint8_t);
+void register_exx(void);
+void register_ex_de_hl(void);
+void register_ex_af_af_alt(void);
+void register_ex_sp_hl(void);
+void register_ex_sp_ix(void);
+void register_ex_sp_iy(void);
 
 #endif
