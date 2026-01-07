@@ -90,6 +90,10 @@ int main(int argc, char *argv[]) {
     case I_LOAD_HL_R:
       inst_load_hl_r((uint8_t)op_code);
       break;
+    case I_LOAD_HL_N:
+      value = get_byte_from_pc();
+      inst_load_hl_n((uint8_t)value);
+      break;
     case I_LOAD_IDX_R:
       displacement = get_byte_from_pc();
       inst_load_idx_r(op_code, idx, displacement);
@@ -114,9 +118,9 @@ int main(int argc, char *argv[]) {
       inst_load_mem_a(mem_addr);
       break;
     case I_LOAD_RR_A:
-      if (op_code == 0x0a) {
+      if (op_code == 0x0A) {
         reg = REG_BC;
-      } else if (op_code == 0x1a) {
+      } else if (op_code == 0x1A) {
         reg = REG_DE;
       } else {
         fprintf(stderr, "op_code: %02x\t Incorrect group\n", op_code);
