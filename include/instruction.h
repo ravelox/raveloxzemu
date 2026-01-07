@@ -10,6 +10,7 @@ typedef enum {
     I_LOAD_R_IDX,
     I_LOAD_HL_R,
     I_LOAD_IDX_R,
+    I_LOAD_IDX_N,
     I_LOAD_A_MEM,
     I_LOAD_A_RR,
     I_LOAD_MEM_A,

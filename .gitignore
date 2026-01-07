@@ -13,3 +13,6 @@
 *.obj
 
 .cache/
+
+# Local helper script
+blap

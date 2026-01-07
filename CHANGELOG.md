@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.1] - 2026-01-06
+- Expand the opcode map to cover more `LD` variants, including immediate, indexed, and I/R transfer forms.
+- Add indexed-immediate `LD` execution in the main opcode dispatcher.
+- Ignore `blap` helper files in the repo.
+
 ## [0.4.0] - 2026-01-06
 - Replace the instruction table stub with grouped opcode mapping and `LD` instruction helpers.
 - Decode prefixed opcodes and execute the supported `LD` instructions in the main loop.

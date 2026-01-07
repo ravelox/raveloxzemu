@@ -58,11 +58,11 @@ int main(int argc, char *argv[]) {
     op_code = get_byte_from_pc();
 
     // Special prefixes
-    if (op_code == 0xdd || op_code == 0xfd || op_code == 0xed) {
-      if (op_code == 0xdd) {
+    if (op_code == 0xDD || op_code == 0xFD || op_code == 0xED) {
+      if (op_code == 0xDD) {
         idx = REG_IX;
       }
-      if (op_code == 0xfd) {
+      if (op_code == 0xFD) {
         idx = REG_IY;
       }
       op_code = (op_code << 8) & get_byte_from_pc();
@@ -74,21 +74,21 @@ int main(int argc, char *argv[]) {
     case I_NOP:
       break;
     case I_LOAD_R_R:
-      inst_load_r_r((uint8_t)(op_code & 0x00FF));
+      inst_load_r_r((uint8_t)op_code);
       break;
     case I_LOAD_R_N:
       value = get_byte_from_pc();
-      inst_load_r_n((uint8_t)(op_code & 0x00FF), (uint8_t)(value & 0x00FF));
+      inst_load_r_n((uint8_t)op_code, (uint8_t)value);
       break;
     case I_LOAD_R_HL:
-      inst_load_r_hl((uint8_t)(op_code & 0x00FF));
+      inst_load_r_hl((uint8_t)op_code);
       break;
     case I_LOAD_R_IDX:
       displacement = get_byte_from_pc();
       inst_load_r_idx(op_code, idx, displacement);
       break;
     case I_LOAD_HL_R:
-      inst_load_hl_r((uint8_t)(op_code & 0x00FF));
+      inst_load_hl_r((uint8_t)op_code);
       break;
     case I_LOAD_IDX_R:
       displacement = get_byte_from_pc();
@@ -136,6 +136,10 @@ int main(int argc, char *argv[]) {
     case I_LOAD_R_REG_A:
       _load_r_r(REG_R, REG_A);
       break;
+    case I_LOAD_IDX_N:
+      displacement = get_byte_from_pc();
+      value = get_byte_from_pc();
+      inst_load_idx_n(idx, displacement, value);
     default:
       fprintf(stderr, "Undefined opcode: %04x\t%u\n", op_code, group);
       break;
