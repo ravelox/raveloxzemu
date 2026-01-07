@@ -4,6 +4,12 @@ int cpu_init(cpu_t *cpu, uint32_t delay, uint16_t memory_size) {
   if (!cpu)
     return -1;
 
+  cpu->last_instruction[0] = '\0';
+  cpu->last_mem_read = 0;
+  cpu->last_mem_write = 0;
+  cpu->last_mem_read_valid = false;
+  cpu->last_mem_write_valid = false;
+
   if (register_init(cpu) != 0)
     return -1;
   if (clock_init(cpu, delay) != 0)

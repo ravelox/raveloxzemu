@@ -41,7 +41,7 @@ The binary initializes the registers, clock (step mode by default), and 64KB of 
 
 ## Instructions
 
-- `instruction.c` maps opcodes to instruction groups with human-readable labels, implements a starter `LD` instruction set (including IX/IY indexed, I/R transfer variants, and `LD (HL), n`), includes block transfer/search helpers, and covers EX + PUSH/POP.
+- `instruction.c` maps opcodes to instruction groups with human-readable labels, implements a starter `LD` instruction set (including IX/IY indexed, I/R transfer variants, and `LD (HL), n`), includes block transfer/search helpers, and covers EX + PUSH/POP + 8-bit arithmetic.
 - `instruction.h` defines instruction groups and the helper APIs used by the opcode dispatcher.
 - Raw opcode listings live in `src/op_codes.txt`.
 

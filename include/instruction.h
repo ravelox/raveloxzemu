@@ -31,6 +31,24 @@ typedef enum {
     I_LOAD_MEM_SP,
     I_PUSH,
     I_POP,
+    I_ADD_A_R,
+    I_ADD_A_N,
+    I_ADD_A_IDX,
+    I_ADC_A_R,
+    I_ADC_A_N,
+    I_ADC_A_IDX,
+    I_SUB_R,
+    I_SUB_N,
+    I_SUB_IDX,
+    I_SBC_A_R,
+    I_SBC_A_N,
+    I_SBC_A_IDX,
+    I_INC_R,
+    I_INC_HL,
+    I_INC_IDX,
+    I_DEC_R,
+    I_DEC_HL,
+    I_DEC_IDX,
     I_BLKT,
     I_BLKS,
     I_EX,
@@ -72,6 +90,24 @@ void inst_load_sp_mem(cpu_t *cpu, uint16_t address);
 void inst_load_mem_sp(cpu_t *cpu, uint16_t address);
 void inst_push_rr(cpu_t *cpu, uint8_t rr);
 void inst_pop_rr(cpu_t *cpu, uint8_t rr);
+void inst_add_a_r(cpu_t *cpu, uint8_t op_code);
+void inst_add_a_n(cpu_t *cpu, uint8_t value);
+void inst_add_a_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_adc_a_r(cpu_t *cpu, uint8_t op_code);
+void inst_adc_a_n(cpu_t *cpu, uint8_t value);
+void inst_adc_a_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_sub_r(cpu_t *cpu, uint8_t op_code);
+void inst_sub_n(cpu_t *cpu, uint8_t value);
+void inst_sub_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_sbc_a_r(cpu_t *cpu, uint8_t op_code);
+void inst_sbc_a_n(cpu_t *cpu, uint8_t value);
+void inst_sbc_a_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_inc_r(cpu_t *cpu, uint8_t op_code);
+void inst_inc_hl(cpu_t *cpu);
+void inst_inc_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_dec_r(cpu_t *cpu, uint8_t op_code);
+void inst_dec_hl(cpu_t *cpu);
+void inst_dec_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
 
 void inst_blkt(cpu_t *cpu, uint16_t);
 void inst_blks(cpu_t *cpu, uint16_t);

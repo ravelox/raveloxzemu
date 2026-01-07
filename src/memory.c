@@ -63,6 +63,8 @@ int memory_set(cpu_t *cpu, uint16_t address, uint8_t value) {
     return -1;
 
   cpu->memory.memory[address] = value;
+  cpu->last_mem_write = address;
+  cpu->last_mem_write_valid = true;
   return 0;
 }
 
@@ -72,5 +74,7 @@ uint8_t memory_get(cpu_t *cpu, uint16_t address) {
   if (!cpu->memory.memory)
     return 0;
 
+  cpu->last_mem_read = address;
+  cpu->last_mem_read_valid = true;
   return cpu->memory.memory[address];
 }

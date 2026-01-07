@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.6] - 2026-01-07
+- Add 8-bit arithmetic helpers (ADD/ADC/SUB/SBC/INC/DEC) and dispatch logic.
+- Track and render CPU state with ANSI output, current instruction, and memory windows.
+- Expand the built-in test program with arithmetic cases.
+
 ## [0.4.5] - 2026-01-07
 - Refactor emulator state into a `cpu_t` instance passed through all helpers.
 - Add CPU init/destroy helpers and forward declarations to simplify includes.

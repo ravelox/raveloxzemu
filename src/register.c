@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -143,53 +144,30 @@ void register_dec(cpu_t *cpu, uint8_t index) {
 }
 
 static void _flag_display(uint16_t flags) {
-  fprintf(stdout, "\tS:%1d Z:%1d H:%1d PV:%1d N:%1d C:%1d\n",
+  fprintf(stdout, "S:%1d Z:%1d H:%1d PV:%1d N:%1d C:%1d",
           flags & (1 << FLAG_S) ? 1 : 0, flags & (1 << FLAG_Z) ? 1 : 0,
           flags & (1 << FLAG_H) ? 1 : 0, flags & (1 << FLAG_PV) ? 1 : 0,
           flags & (1 << FLAG_N) ? 1 : 0, flags & (1 << FLAG_C) ? 1 : 0);
-
-  if (FLAG_IS_CARRY(flags))
-    fprintf(stdout, "\tCarry");
-  if (FLAG_IS_ZERO(flags))
-    fprintf(stdout, "\tZero");
-  fprintf(stdout, "\t%s", FLAG_IS_EVEN(flags) ? "Even" : "Odd");
-  if (FLAG_IS_OVERFLOW(flags))
-    fprintf(stdout, "\tOverflow");
-  if (FLAG_IS_HALF(flags))
-    fprintf(stdout, "\tHalf-Carry");
-  if (FLAG_IS_NEGATIVE(flags))
-    fprintf(stdout, "\tNegative");
-
-  fprintf(stdout, "\n");
 }
 
-static void _register_display(z80_register_t *z80_registers, int alt) {
-  fprintf(stdout, "=========\n");
-  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "AF'" : " AF",
-          _register_value_get(z80_registers, REG_AF), alt ? "A'" : " A",
-          _register_value_get(z80_registers, REG_A), alt ? "F'" : " F",
-          _register_value_get(z80_registers, REG_F));
-  _flag_display(_register_value_get(z80_registers, REG_F) & 0xFF);
-  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "BC'" : " BC",
-          _register_value_get(z80_registers, REG_BC), alt ? "B'" : " B",
-          _register_value_get(z80_registers, REG_D), alt ? "C'" : " C",
-          _register_value_get(z80_registers, REG_E));
-  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "HL'" : " HL",
-          _register_value_get(z80_registers, REG_HL), alt ? "H'" : " H",
-          _register_value_get(z80_registers, REG_H), alt ? "L'" : " L",
-          _register_value_get(z80_registers, REG_L));
-  fprintf(stdout, "%s: %04X", alt ? "PC'" : " PC",
-          _register_value_get(z80_registers, REG_PC));
-  fprintf(stdout, "\t%s: %04X\n", alt ? "SP'" : " SP",
-          _register_value_get(z80_registers, REG_SP));
-  fprintf(stdout, "%s: %04X", alt ? "IX'" : " IX",
-          _register_value_get(z80_registers, REG_IX));
-  fprintf(stdout, "\t%s: %04X\n", alt ? "IY'" : " IY",
-          _register_value_get(z80_registers, REG_IY));
-  fprintf(stdout, "%s: %04X\t%s: %02X\t%s: %02X\n", alt ? "IR'" : " IR",
-          _register_value_get(z80_registers, REG_IR), alt ? "I'" : " I",
-          _register_value_get(z80_registers, REG_I), alt ? "R'" : " R",
-          _register_value_get(z80_registers, REG_R));
+static void _dump_memory_window(cpu_t *cpu, uint16_t address) {
+  uint16_t base = (uint16_t)(address & 0xFFF0);
+
+  for (uint16_t row = 0; row < 2; row++) {
+    uint16_t row_addr = (uint16_t)(base + row * 16);
+    fprintf(stdout, "  %04X  ", row_addr);
+    for (uint16_t col = 0; col < 16; col++) {
+      uint16_t addr = (uint16_t)(row_addr + col);
+      fprintf(stdout, "%02X ", (uint8_t)cpu->memory.memory[addr]);
+    }
+    fprintf(stdout, " |");
+    for (uint16_t col = 0; col < 16; col++) {
+      uint16_t addr = (uint16_t)(row_addr + col);
+      uint8_t value = (uint8_t)cpu->memory.memory[addr];
+      fputc(isprint(value) ? value : '.', stdout);
+    }
+    fprintf(stdout, "|\n");
+  }
 }
 
 void register_swap_single(cpu_t *cpu, uint8_t reg) {
@@ -256,8 +234,52 @@ void register_display(cpu_t *cpu) {
   if (!cpu)
     return;
 
-  _register_display(cpu->registers, REG_FALSE);
-  _register_display(cpu->alt_registers, REG_TRUE);
+  fprintf(stdout, "\033[2J\033[H");
+  fprintf(stdout, "\033[1;36mZ80 CPU State\033[0m\n");
+  fprintf(stdout, "AF:%04X  BC:%04X  DE:%04X  HL:%04X  IX:%04X  IY:%04X\n",
+          _register_value_get(cpu->registers, REG_AF),
+          _register_value_get(cpu->registers, REG_BC),
+          _register_value_get(cpu->registers, REG_DE),
+          _register_value_get(cpu->registers, REG_HL),
+          _register_value_get(cpu->registers, REG_IX),
+          _register_value_get(cpu->registers, REG_IY));
+  fprintf(stdout, "SP:%04X  PC:%04X  IR:%04X  ",
+          _register_value_get(cpu->registers, REG_SP),
+          _register_value_get(cpu->registers, REG_PC),
+          _register_value_get(cpu->registers, REG_IR));
+  _flag_display(_register_value_get(cpu->registers, REG_F) & 0xFF);
+  fprintf(stdout, "\n\n");
+
+  fprintf(stdout, "\033[1;34mAlt Registers\033[0m\n");
+  fprintf(stdout, "AF':%04X  BC':%04X  DE':%04X  HL':%04X\n\n",
+          _register_value_get(cpu->alt_registers, REG_AF),
+          _register_value_get(cpu->alt_registers, REG_BC),
+          _register_value_get(cpu->alt_registers, REG_DE),
+          _register_value_get(cpu->alt_registers, REG_HL));
+
+  fprintf(stdout, "\033[1;33mInstruction\033[0m\n");
+  if (cpu->last_instruction[0] != '\0') {
+    fprintf(stdout, "  %s\n\n", cpu->last_instruction);
+  } else {
+    fprintf(stdout, "  (none)\n\n");
+  }
+
+  fprintf(stdout, "\033[1;35mMemory (Last Read)\033[0m\n");
+  if (cpu->last_mem_read_valid) {
+    fprintf(stdout, "  Address: %04X\n", cpu->last_mem_read);
+    _dump_memory_window(cpu, cpu->last_mem_read);
+  } else {
+    fprintf(stdout, "  (none)\n");
+  }
+  fprintf(stdout, "\n");
+
+  fprintf(stdout, "\033[1;35mMemory (Last Write)\033[0m\n");
+  if (cpu->last_mem_write_valid) {
+    fprintf(stdout, "  Address: %04X\n", cpu->last_mem_write);
+    _dump_memory_window(cpu, cpu->last_mem_write);
+  } else {
+    fprintf(stdout, "  (none)\n");
+  }
 }
 
 void register_bit_set(cpu_t *cpu, uint8_t index, uint8_t bit) {

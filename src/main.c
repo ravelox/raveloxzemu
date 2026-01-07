@@ -204,6 +204,70 @@ int main(int argc, char *argv[]) {
       mem_addr = get_word_from_pc(cpu);
       inst_load_mem_sp(cpu, mem_addr);
       break;
+    case I_ADD_A_R:
+      inst_add_a_r(cpu, (uint8_t)op_code);
+      break;
+    case I_ADD_A_N:
+      value = get_byte_from_pc(cpu);
+      inst_add_a_n(cpu, (uint8_t)value);
+      break;
+    case I_ADD_A_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_add_a_idx(cpu, idx, displacement);
+      break;
+    case I_ADC_A_R:
+      inst_adc_a_r(cpu, (uint8_t)op_code);
+      break;
+    case I_ADC_A_N:
+      value = get_byte_from_pc(cpu);
+      inst_adc_a_n(cpu, (uint8_t)value);
+      break;
+    case I_ADC_A_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_adc_a_idx(cpu, idx, displacement);
+      break;
+    case I_SUB_R:
+      inst_sub_r(cpu, (uint8_t)op_code);
+      break;
+    case I_SUB_N:
+      value = get_byte_from_pc(cpu);
+      inst_sub_n(cpu, (uint8_t)value);
+      break;
+    case I_SUB_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_sub_idx(cpu, idx, displacement);
+      break;
+    case I_SBC_A_R:
+      inst_sbc_a_r(cpu, (uint8_t)op_code);
+      break;
+    case I_SBC_A_N:
+      value = get_byte_from_pc(cpu);
+      inst_sbc_a_n(cpu, (uint8_t)value);
+      break;
+    case I_SBC_A_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_sbc_a_idx(cpu, idx, displacement);
+      break;
+    case I_INC_R:
+      inst_inc_r(cpu, (uint8_t)op_code);
+      break;
+    case I_INC_HL:
+      inst_inc_hl(cpu);
+      break;
+    case I_INC_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_inc_idx(cpu, idx, displacement);
+      break;
+    case I_DEC_R:
+      inst_dec_r(cpu, (uint8_t)op_code);
+      break;
+    case I_DEC_HL:
+      inst_dec_hl(cpu);
+      break;
+    case I_DEC_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_dec_idx(cpu, idx, displacement);
+      break;
     case I_PUSH:
       if (op_code == 0xC5) {
         reg = REG_BC;
