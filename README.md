@@ -19,7 +19,7 @@ The resulting binary is placed in `build/`.
 ./build/raveloxzemu
 ```
 
-The binary initializes the registers, clock (step mode by default), and 64KB of memory, then repeatedly fetches an opcode from memory at `PC`, dumps the register state, and increments `PC`. With the default `CLOCK_DELAY` of 0 you advance each step by pressing Enter.
+The binary initializes the registers, clock (step mode by default), and 64KB of memory, then repeatedly fetches an opcode from memory at `PC`, decodes a subset of `LD` instructions, and dumps the register state. With the default `CLOCK_DELAY` of 0 you advance each step by pressing Enter.
 
 ## Register helpers
 
@@ -41,7 +41,9 @@ The binary initializes the registers, clock (step mode by default), and 64KB of 
 
 ## Instructions
 
-- `instruction.c` holds a starter opcode table; raw opcode listings live in `src/op_codes.txt`.
+- `instruction.c` maps opcodes to instruction groups and implements a starter `LD` instruction set.
+- `instruction.h` defines instruction groups and the helper APIs used by the opcode dispatcher.
+- Raw opcode listings live in `src/op_codes.txt`.
 
 ## Project layout
 

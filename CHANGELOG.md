@@ -7,11 +7,15 @@ All notable changes to this project will be documented in this file.
 - Add basic register definitions and empty main scaffold.
 - Add git metadata and ignore rules.
 
+## Unreleased
+
+## [0.4.0] - 2026-01-06
+- Replace the instruction table stub with grouped opcode mapping and `LD` instruction helpers.
+- Decode prefixed opcodes and execute the supported `LD` instructions in the main loop.
+
 ## [0.2.0] - 2026-01-02
 - Expand register helpers to use a unified byte/word API, add getters/setters, increment/decrement helpers, flag bit utilities, and alternate bank swapping.
 - Enable `CMAKE_EXPORT_COMPILE_COMMANDS` and document build/run workflow.
 - Add simple clock module with optional step-through delay for single-stepping.
 - Add memory allocation module with byte get/set and bulk load helpers; seed stack pointer to top of memory.
 - Introduce instruction module stub with starter opcode table sourced from `src/op_codes.txt`.
-
-## Unreleased
