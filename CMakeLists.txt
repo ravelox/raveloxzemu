@@ -9,10 +9,12 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(SOURCES
     src/main.c
+    src/cpu.c
     src/register.c
     src/clock.c
     src/memory.c
     src/instruction.c
+    src/test_program.c
 )
 
 add_executable(raveloxzemu ${SOURCES})

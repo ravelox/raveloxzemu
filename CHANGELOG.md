@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.5] - 2026-01-07
+- Refactor emulator state into a `cpu_t` instance passed through all helpers.
+- Add CPU init/destroy helpers and forward declarations to simplify includes.
+- Expand the built-in test program and keep it compiled into the emulator.
+
 ## [0.4.4] - 2026-01-07
 - Add EX helpers for register and stack exchanges.
 - Map EX opcodes and dispatch them in the instruction switch.

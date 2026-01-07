@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cpu_fwd.h"
+
 typedef union {
   uint16_t word;
   struct {
@@ -56,32 +58,32 @@ typedef union {
 #define REG_TRUE (1 == 1)
 #define REG_FALSE (1 == 0)
 
-int register_init(void);
-int register_destroy(void);
+int register_init(cpu_t *cpu);
+int register_destroy(cpu_t *cpu);
 
-void register_display(void);
+void register_display(cpu_t *cpu);
 
-int register_value_set(uint8_t, uint16_t);
-uint16_t register_value_get(uint8_t);
+int register_value_set(cpu_t *cpu, uint8_t, uint16_t);
+uint16_t register_value_get(cpu_t *cpu, uint8_t);
 
-void register_inc(uint8_t);
-void register_dec(uint8_t);
+void register_inc(cpu_t *cpu, uint8_t);
+void register_dec(cpu_t *cpu, uint8_t);
 
-void register_flag_set(uint8_t);
-void register_flag_unset(uint8_t);
+void register_flag_set(cpu_t *cpu, uint8_t);
+void register_flag_unset(cpu_t *cpu, uint8_t);
 
-void register_bit_set(uint8_t, uint8_t);
-void register_bit_unset(uint8_t, uint8_t);
-uint8_t register_bit_get(uint8_t, uint8_t);
+void register_bit_set(cpu_t *cpu, uint8_t, uint8_t);
+void register_bit_unset(cpu_t *cpu, uint8_t, uint8_t);
+uint8_t register_bit_get(cpu_t *cpu, uint8_t, uint8_t);
 
 uint8_t register_map(uint8_t index);
 
-void register_swap_single(uint8_t);
-void register_exx(void);
-void register_ex_de_hl(void);
-void register_ex_af_af_alt(void);
-void register_ex_sp_hl(void);
-void register_ex_sp_ix(void);
-void register_ex_sp_iy(void);
+void register_swap_single(cpu_t *cpu, uint8_t);
+void register_exx(cpu_t *cpu);
+void register_ex_de_hl(cpu_t *cpu);
+void register_ex_af_af_alt(cpu_t *cpu);
+void register_ex_sp_hl(cpu_t *cpu);
+void register_ex_sp_ix(cpu_t *cpu);
+void register_ex_sp_iy(cpu_t *cpu);
 
 #endif

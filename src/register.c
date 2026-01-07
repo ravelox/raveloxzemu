@@ -3,36 +3,31 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "memory.h"
 #include "register.h"
 
 static const uint8_t _reg_map[] = {REG_B, REG_C, REG_D, REG_E,
                                    REG_H, REG_L, REG_A};
 
-static z80_register_t *registers;
-static z80_register_t *alt_registers;
-
-int register_init(void) {
-
+int register_init(cpu_t *cpu) {
   size_t register_size = sizeof(z80_register_t) * REG_COUNT;
 
-  registers = (z80_register_t *)malloc(register_size);
-  alt_registers = (z80_register_t *)malloc(register_size);
-
-  if (!registers || !alt_registers)
+  if (!cpu)
     return -1;
 
-  memset(registers, 0, register_size);
-  memset(alt_registers, 0, register_size);
+  memset(cpu->registers, 0, register_size);
+  memset(cpu->alt_registers, 0, register_size);
 
   return 0;
 }
 
-int register_destroy(void) {
-  if (registers)
-    free(registers);
-  if (alt_registers)
-    free(alt_registers);
+int register_destroy(cpu_t *cpu) {
+  if (!cpu)
+    return 0;
+
+  memset(cpu->registers, 0, sizeof(cpu->registers));
+  memset(cpu->alt_registers, 0, sizeof(cpu->alt_registers));
   return 0;
 }
 
@@ -53,18 +48,21 @@ static int _register_value_set(z80_register_t *z80_registers, uint8_t index,
   return 0;
 }
 
-int register_value_set(uint8_t index, uint16_t value) {
+int register_value_set(cpu_t *cpu, uint8_t index, uint16_t value) {
   uint8_t real_index = index & REG_MASK;
+
+  if (!cpu)
+    return -1;
 
   if (real_index >= REG_COUNT)
     return -1;
 
   if (index & HIGH_BYTE) {
-    registers[real_index].bytes.high = value;
+    cpu->registers[real_index].bytes.high = value;
   } else if (index & LOW_BYTE) {
-    registers[real_index].bytes.low = value;
+    cpu->registers[real_index].bytes.low = value;
   } else {
-    registers[real_index].word = value;
+    cpu->registers[real_index].word = value;
   }
   return 0;
 }
@@ -86,51 +84,60 @@ uint16_t _register_value_get(z80_register_t *z80_registers, uint8_t index) {
   return return_value;
 }
 
-uint16_t register_value_get(uint8_t index) {
+uint16_t register_value_get(cpu_t *cpu, uint8_t index) {
   uint8_t real_index = index & REG_MASK;
   uint16_t return_value = 0;
+
+  if (!cpu)
+    return return_value;
 
   if (real_index >= REG_COUNT)
     return return_value;
 
   if (index & HIGH_BYTE) {
-    return_value = registers[real_index].bytes.high;
+    return_value = cpu->registers[real_index].bytes.high;
   } else if (index & LOW_BYTE) {
-    return_value = registers[real_index].bytes.low;
+    return_value = cpu->registers[real_index].bytes.low;
   } else {
-    return_value = registers[real_index].word;
+    return_value = cpu->registers[real_index].word;
   }
   return return_value;
 }
 
-void register_inc(uint8_t index) {
+void register_inc(cpu_t *cpu, uint8_t index) {
   uint8_t real_index = index & REG_MASK;
+
+  if (!cpu)
+    return;
 
   if (real_index >= REG_COUNT)
     return;
 
   if (index & HIGH_BYTE) {
-    registers[real_index].bytes.high++;
+    cpu->registers[real_index].bytes.high++;
   } else if (index & LOW_BYTE) {
-    registers[real_index].bytes.low++;
+    cpu->registers[real_index].bytes.low++;
   } else {
-    registers[real_index].word++;
+    cpu->registers[real_index].word++;
   }
   return;
 }
 
-void register_dec(uint8_t index) {
+void register_dec(cpu_t *cpu, uint8_t index) {
   uint8_t real_index = index & REG_MASK;
+
+  if (!cpu)
+    return;
 
   if (real_index >= REG_COUNT)
     return;
 
   if (index & HIGH_BYTE) {
-    registers[real_index].bytes.high--;
+    cpu->registers[real_index].bytes.high--;
   } else if (index & LOW_BYTE) {
-    registers[real_index].bytes.low--;
+    cpu->registers[real_index].bytes.low--;
   } else {
-    registers[real_index].word--;
+    cpu->registers[real_index].word--;
   }
   return;
 }
@@ -185,73 +192,97 @@ static void _register_display(z80_register_t *z80_registers, int alt) {
           _register_value_get(z80_registers, REG_R));
 }
 
-void register_swap_single(uint8_t reg) {
-  z80_register_t temp = registers[reg];
-  registers[reg] = alt_registers[reg];
-  alt_registers[reg] = temp;
-}
-
-void register_exx(void) {
+void register_swap_single(cpu_t *cpu, uint8_t reg) {
   z80_register_t temp;
-  register_swap_single(REG_BC);
-  register_swap_single(REG_DE);
-  register_swap_single(REG_HL);
+
+  if (!cpu)
+    return;
+
+  temp = cpu->registers[reg];
+  cpu->registers[reg] = cpu->alt_registers[reg];
+  cpu->alt_registers[reg] = temp;
 }
 
-void register_ex_de_hl(void) {
-  z80_register_t temp = registers[REG_DE];
-  registers[REG_DE] = registers[REG_HL];
-  registers[REG_HL] = temp;
+void register_exx(cpu_t *cpu) {
+  if (!cpu)
+    return;
+
+  register_swap_single(cpu, REG_BC);
+  register_swap_single(cpu, REG_DE);
+  register_swap_single(cpu, REG_HL);
 }
 
-void register_ex_af_af_alt(void) {
-  z80_register_t temp = registers[REG_AF];
-  registers[REG_AF] = alt_registers[REG_AF];
-  alt_registers[REG_AF] = temp;
+void register_ex_de_hl(cpu_t *cpu) {
+  z80_register_t temp;
+
+  if (!cpu)
+    return;
+
+  temp = cpu->registers[REG_DE];
+  cpu->registers[REG_DE] = cpu->registers[REG_HL];
+  cpu->registers[REG_HL] = temp;
 }
 
-static void register_ex_sp_rr(uint8_t reg) {
-  uint16_t sp = register_value_get(REG_SP);
-  uint8_t low = memory_get(sp);
-  uint8_t high = memory_get((uint16_t)(sp + 1));
+void register_ex_af_af_alt(cpu_t *cpu) {
+  z80_register_t temp;
+
+  if (!cpu)
+    return;
+
+  temp = cpu->registers[REG_AF];
+  cpu->registers[REG_AF] = cpu->alt_registers[REG_AF];
+  cpu->alt_registers[REG_AF] = temp;
+}
+
+static void register_ex_sp_rr(cpu_t *cpu, uint8_t reg) {
+  uint16_t sp = register_value_get(cpu, REG_SP);
+  uint8_t low = memory_get(cpu, sp);
+  uint8_t high = memory_get(cpu, (uint16_t)(sp + 1));
   uint16_t mem_value = (uint16_t)((high << 8) | low);
-  uint16_t reg_value = register_value_get(reg);
+  uint16_t reg_value = register_value_get(cpu, reg);
 
-  register_value_set(reg, mem_value);
-  memory_set(sp, (uint8_t)(reg_value & 0x00FF));
-  memory_set((uint16_t)(sp + 1), (uint8_t)((reg_value >> 8) & 0x00FF));
+  register_value_set(cpu, reg, mem_value);
+  memory_set(cpu, sp, (uint8_t)(reg_value & 0x00FF));
+  memory_set(cpu, (uint16_t)(sp + 1), (uint8_t)((reg_value >> 8) & 0x00FF));
 }
 
-void register_ex_sp_hl(void) { register_ex_sp_rr(REG_HL); }
+void register_ex_sp_hl(cpu_t *cpu) { register_ex_sp_rr(cpu, REG_HL); }
 
-void register_ex_sp_ix(void) { register_ex_sp_rr(REG_IX); }
+void register_ex_sp_ix(cpu_t *cpu) { register_ex_sp_rr(cpu, REG_IX); }
 
-void register_ex_sp_iy(void) { register_ex_sp_rr(REG_IY); }
+void register_ex_sp_iy(cpu_t *cpu) { register_ex_sp_rr(cpu, REG_IY); }
 
-void register_display(void) {
-  _register_display(registers, REG_FALSE);
-  _register_display(alt_registers, REG_TRUE);
+void register_display(cpu_t *cpu) {
+  if (!cpu)
+    return;
+
+  _register_display(cpu->registers, REG_FALSE);
+  _register_display(cpu->alt_registers, REG_TRUE);
 }
 
-void register_bit_set(uint8_t index, uint8_t bit) {
-  uint8_t current_value = register_value_get(index) & 0x00FF;
+void register_bit_set(cpu_t *cpu, uint8_t index, uint8_t bit) {
+  uint8_t current_value = register_value_get(cpu, index) & 0x00FF;
   uint8_t new_value = current_value | (1 << bit);
-  register_value_set(index, new_value);
+  register_value_set(cpu, index, new_value);
 }
-void register_bit_unset(uint8_t index, uint8_t bit) {
-  uint8_t current_value = register_value_get(REG_F) & 0x00FF;
+void register_bit_unset(cpu_t *cpu, uint8_t index, uint8_t bit) {
+  uint8_t current_value = register_value_get(cpu, REG_F) & 0x00FF;
   uint8_t new_value = current_value & ~(1 << bit);
-  register_value_set(index, new_value);
+  register_value_set(cpu, index, new_value);
 }
 
-uint8_t register_bit_get(uint8_t index, uint8_t bit) {
-  uint8_t current_value = register_value_get(REG_F) & 0x00FF;
+uint8_t register_bit_get(cpu_t *cpu, uint8_t index, uint8_t bit) {
+  uint8_t current_value = register_value_get(cpu, REG_F) & 0x00FF;
   return ((current_value & (1 << bit)) > 0);
 }
 
-void register_flag_set(uint8_t flag) { register_bit_set(REG_F, flag); }
+void register_flag_set(cpu_t *cpu, uint8_t flag) {
+  register_bit_set(cpu, REG_F, flag);
+}
 
-void register_flag_unset(uint8_t flag) { register_bit_set(REG_F, flag); }
+void register_flag_unset(cpu_t *cpu, uint8_t flag) {
+  register_bit_set(cpu, REG_F, flag);
+}
 
 uint8_t register_map(uint8_t index) {
   if (index >= sizeof(_reg_map))

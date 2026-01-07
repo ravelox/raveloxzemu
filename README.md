@@ -41,7 +41,7 @@ The binary initializes the registers, clock (step mode by default), and 64KB of 
 
 ## Instructions
 
-- `instruction.c` maps opcodes to instruction groups with human-readable labels, implements a starter `LD` instruction set (including IX/IY indexed, I/R transfer variants, and `LD (HL), n`), includes block transfer/search helpers, and now covers EX instructions.
+- `instruction.c` maps opcodes to instruction groups with human-readable labels, implements a starter `LD` instruction set (including IX/IY indexed, I/R transfer variants, and `LD (HL), n`), includes block transfer/search helpers, and covers EX + PUSH/POP.
 - `instruction.h` defines instruction groups and the helper APIs used by the opcode dispatcher.
 - Raw opcode listings live in `src/op_codes.txt`.
 
@@ -50,3 +50,4 @@ The binary initializes the registers, clock (step mode by default), and 64KB of 
 - `src/` — source files for the emulator.
 - `include/` — public headers.
 - `CMakeLists.txt` — CMake build configuration.
+- `src/test_program.c` / `include/test_program.h` — built-in sample program loaded at startup.

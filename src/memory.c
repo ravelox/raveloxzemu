@@ -2,62 +2,75 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cpu.h"
 #include "memory.h"
 
-static z80_memory_t *mem;
+int memory_init(cpu_t *cpu, uint16_t memory_size) {
+  if (!cpu)
+    return -1;
 
-int memory_init(uint16_t memory_size) {
+  cpu->memory.size = memory_size;
+  cpu->memory.memory = (char *)malloc(cpu->memory.size);
 
-  mem = (z80_memory_t *)malloc(sizeof(z80_memory_t));
-  if (!mem) {
-    fprintf(stderr, "Cannot allocate internal memory structure\n");
+  if (!cpu->memory.memory) {
+    fprintf(stderr, "Cannot allocate memory space: %u\n", cpu->memory.size);
     return -1;
   }
 
-  mem->size = memory_size;
-  mem->memory = (char *)malloc(mem->size);
-
-  if (!mem->memory) {
-    fprintf(stderr, "Cannot allocate memory space: %u\n", mem->size);
-    return -1;
-  }
-
-  memset(mem->memory, 0, mem->size);
+  memset(cpu->memory.memory, 0, cpu->memory.size);
 
   fprintf(stdout, "Memory allocated: %x\n", memory_size);
   return 0;
 }
 
-int memory_destroy(void) {
-  if (!mem)
+int memory_destroy(cpu_t *cpu) {
+  if (!cpu)
     return 0;
-  if (mem->memory)
-    free(mem->memory);
-  free(mem);
+  if (cpu->memory.memory)
+    free(cpu->memory.memory);
+  cpu->memory.memory = NULL;
+  cpu->memory.size = 0;
   return 0;
 }
 
-uint16_t memory_get_size(void) {
-  if (!mem) {
+uint16_t memory_get_size(cpu_t *cpu) {
+  if (!cpu) {
     fprintf(stderr, "Memory not allocated\n");
     return 0;
   }
-  return mem->size;
+  return cpu->memory.size;
 }
 
-int memory_set(uint16_t address, uint8_t value) {
-  if (!mem)
+int memory_load(cpu_t *cpu, const uint8_t *buffer, size_t length) {
+  return memory_load_at(cpu, buffer, length, 0);
+}
+
+int memory_load_at(cpu_t *cpu, const uint8_t *buffer, size_t length,
+                   uint16_t offset) {
+  if (!cpu || !cpu->memory.memory || !buffer)
     return -1;
-  if (!mem->memory)
+  if ((size_t)offset + length > cpu->memory.size)
     return -1;
 
-  mem->memory[address] = value;
+  memcpy(cpu->memory.memory + offset, buffer, length);
   return 0;
 }
 
-uint8_t memory_get(uint16_t address) {
-    if( ! mem) return 0;
-    if( ! mem->memory ) return 0;
+int memory_set(cpu_t *cpu, uint16_t address, uint8_t value) {
+  if (!cpu)
+    return -1;
+  if (!cpu->memory.memory)
+    return -1;
 
-    return mem->memory[address];
+  cpu->memory.memory[address] = value;
+  return 0;
+}
+
+uint8_t memory_get(cpu_t *cpu, uint16_t address) {
+  if (!cpu)
+    return 0;
+  if (!cpu->memory.memory)
+    return 0;
+
+  return cpu->memory.memory[address];
 }
