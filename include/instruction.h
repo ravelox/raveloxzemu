@@ -20,12 +20,15 @@ typedef enum {
     I_LOAD_A_R_REG,
     I_LOAD_I_A,
     I_LOAD_R_REG_A,
+    I_BLKT,
+    I_BLKS,
     I_U // Undefined or unused
 } instruction_group_t;
 
 typedef struct {
 uint16_t op_code;
 instruction_group_t group;
+const char *label;
 } instruction_map_t;
 
 instruction_group_t instruction_group_get(uint16_t);
@@ -43,3 +46,6 @@ void inst_load_a_mem(uint16_t address);
 void inst_load_a_rr(uint8_t rr);
 void inst_load_mem_a(uint16_t address);
 void inst_load_rr_a(uint8_t rr);
+
+void inst_blkt(uint16_t);
+void inst_blks(uint16_t);

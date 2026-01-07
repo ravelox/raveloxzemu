@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.3] - 2026-01-06
+- Add opcode labels to the instruction map for easier identification.
+- Dispatch block transfer/search instructions and correct flag/repeat behavior.
+- Ignore the local `raveloxzemu` binary.
+
 ## [0.4.2] - 2026-01-06
 - Extend the opcode map to cover the remaining `LD` register and memory variants.
 - Add `LD (HL), n` to the opcode map and dispatch it in the main loop.

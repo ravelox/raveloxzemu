@@ -144,6 +144,13 @@ int main(int argc, char *argv[]) {
       displacement = get_byte_from_pc();
       value = get_byte_from_pc();
       inst_load_idx_n(idx, displacement, value);
+      break;
+    case I_BLKT:
+      inst_blkt(op_code);
+      break;
+    case I_BLKS:
+      inst_blks(op_code);
+      break;
     default:
       fprintf(stderr, "Undefined opcode: %04x\t%u\n", op_code, group);
       break;

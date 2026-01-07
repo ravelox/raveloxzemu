@@ -14,5 +14,8 @@
 
 .cache/
 
+# Local build binary
+raveloxzemu
+
 # Local helper script
 blap
