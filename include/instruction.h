@@ -66,6 +66,12 @@ typedef enum {
     I_CALL,
     I_RET,
     I_RST,
+    I_ADD_HL_RR,
+    I_ADD_IX_IY_RR,
+    I_ADC_HL_RR,
+    I_SBC_HL_RR,
+    I_INC_RR,
+    I_DEC_RR,
     I_DAA,
     I_CPL,
     I_NEG,
@@ -151,6 +157,12 @@ void inst_jp(cpu_t *cpu, uint16_t op_code, uint16_t address);
 void inst_call(cpu_t *cpu, uint16_t op_code, uint16_t address);
 void inst_ret(cpu_t *cpu, uint16_t op_code);
 void inst_rst(cpu_t *cpu, uint8_t op_code);
+void inst_add_hl_rr(cpu_t *cpu, uint16_t op_code);
+void inst_add_ix_iy_rr(cpu_t *cpu, uint16_t op_code, uint8_t index_reg);
+void inst_adc_hl_rr(cpu_t *cpu, uint16_t op_code);
+void inst_sbc_hl_rr(cpu_t *cpu, uint16_t op_code);
+void inst_inc_rr(cpu_t *cpu, uint16_t op_code);
+void inst_dec_rr(cpu_t *cpu, uint16_t op_code);
 void inst_daa(cpu_t *cpu);
 void inst_cpl(cpu_t *cpu);
 void inst_neg(cpu_t *cpu);

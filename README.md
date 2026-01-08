@@ -1,6 +1,11 @@
 # raveloxzemu
 
-A small C-based Z80 emulator experiment. Currently includes register definitions/helpers, a simple clock, memory allocation, an instruction table stub, and a minimal executable that prints the register state on each step.
+A small C-based Z80 emulator experiment with:
+- CPU instance model (no globals for registers/memory/clock).
+- Debugger-style prompt for run/step/memory inspection and load/dump.
+- ANSI register + memory display with last instruction logging.
+- Growing instruction set: LD/EX/PUSH/POP, 8-bit arithmetic + logic, 16-bit arithmetic, control flow, CB-prefixed ops.
+- Built-in test program covering supported instructions.
 
 ## Build
 

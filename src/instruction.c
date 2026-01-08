@@ -16,17 +16,26 @@ static instruction_map_t instruction_map[] = {
     {0x08, I_EX, "EX AF,AF'"},
     {0x0A, I_LOAD_RR_A, "LD (BC/DE),A"},
     {0x0E, I_LOAD_R_N, "LD r,n"},
+    {0x03, I_INC_RR, "INC rr"},
+    {0x0B, I_DEC_RR, "DEC rr"},
+    {0x09, I_ADD_HL_RR, "ADD HL,rr"},
     {0x11, I_LOAD_RR_NN, "LD rr,nn"},
     {0x12, I_LOAD_RR_A, "LD (BC/DE),A"},
     {0x16, I_LOAD_R_N, "LD r,n"},
     {0x1A, I_LOAD_RR_A, "LD (BC/DE),A"},
     {0x1E, I_LOAD_R_N, "LD r,n"},
+    {0x13, I_INC_RR, "INC rr"},
+    {0x1B, I_DEC_RR, "DEC rr"},
+    {0x19, I_ADD_HL_RR, "ADD HL,rr"},
     {0x18, I_JR, "JR d"},
     {0x21, I_LOAD_RR_NN, "LD rr,nn"},
     {0x26, I_LOAD_R_N, "LD r,n"},
     {0x2E, I_LOAD_R_N, "LD r,n"},
     {0x27, I_DAA, "DAA"},
     {0x22, I_LOAD_MEM_RR, "LD (nn),rr"},
+    {0x23, I_INC_RR, "INC rr"},
+    {0x2B, I_DEC_RR, "DEC rr"},
+    {0x29, I_ADD_HL_RR, "ADD HL,rr"},
     {0x2A, I_LOAD_RR_MEM, "LD rr,(nn)"},
     {0x31, I_LOAD_RR_NN, "LD rr,nn"},
     {0x32, I_LOAD_MEM_A, "LD (nn),A"},
@@ -34,6 +43,9 @@ static instruction_map_t instruction_map[] = {
     {0x3E, I_LOAD_R_N, "LD r,n"},
     {0x36, I_LOAD_HL_N, "LD (HL),n"},
     {0x2F, I_CPL, "CPL"},
+    {0x33, I_INC_RR, "INC rr"},
+    {0x3B, I_DEC_RR, "DEC rr"},
+    {0x39, I_ADD_HL_RR, "ADD HL,rr"},
     {0x20, I_JR, "JR NZ,d"},
     {0x28, I_JR, "JR Z,d"},
     {0x30, I_JR, "JR NC,d"},
@@ -268,6 +280,12 @@ static instruction_map_t instruction_map[] = {
     {0xDD2A, I_LOAD_RR_MEM, "LD rr,(nn)"},
     {0xDDE3, I_EX, "EX (SP),IX"},
     {0xDDE9, I_JP, "JP (IX)"},
+    {0xDD09, I_ADD_IX_IY_RR, "ADD IX,rr"},
+    {0xDD19, I_ADD_IX_IY_RR, "ADD IX,rr"},
+    {0xDD29, I_ADD_IX_IY_RR, "ADD IX,rr"},
+    {0xDD39, I_ADD_IX_IY_RR, "ADD IX,rr"},
+    {0xDD23, I_INC_RR, "INC IX"},
+    {0xDD2B, I_DEC_RR, "DEC IX"},
     {0xDDF9, I_LOAD_SP_RR, "LD SP,rr"},
     {0xE3, I_EX, "EX (SP),HL"},
     {0xEB, I_EX, "EX DE,HL"},
@@ -275,6 +293,14 @@ static instruction_map_t instruction_map[] = {
     {0xED4F, I_LOAD_A_R_REG, "LD A,R"},
     {0xED57, I_LOAD_I_A, "LD I,A"},
     {0xED5F, I_LOAD_R_REG_A, "LD R,A"},
+    {0xED4A, I_ADC_HL_RR, "ADC HL,rr"},
+    {0xED5A, I_ADC_HL_RR, "ADC HL,rr"},
+    {0xED6A, I_ADC_HL_RR, "ADC HL,rr"},
+    {0xED7A, I_ADC_HL_RR, "ADC HL,rr"},
+    {0xED42, I_SBC_HL_RR, "SBC HL,rr"},
+    {0xED52, I_SBC_HL_RR, "SBC HL,rr"},
+    {0xED62, I_SBC_HL_RR, "SBC HL,rr"},
+    {0xED72, I_SBC_HL_RR, "SBC HL,rr"},
     {0xED44, I_NEG, "NEG"},
     {0xED4C, I_NEG, "NEG"},
     {0xED54, I_NEG, "NEG"},
@@ -342,6 +368,12 @@ static instruction_map_t instruction_map[] = {
     {0xFDE9, I_JP, "JP (IY)"},
     {0xFDE1, I_POP, "POP rr"},
     {0xFDE5, I_PUSH, "PUSH rr"},
+    {0xFD09, I_ADD_IX_IY_RR, "ADD IY,rr"},
+    {0xFD19, I_ADD_IX_IY_RR, "ADD IY,rr"},
+    {0xFD29, I_ADD_IX_IY_RR, "ADD IY,rr"},
+    {0xFD39, I_ADD_IX_IY_RR, "ADD IY,rr"},
+    {0xFD23, I_INC_RR, "INC IY"},
+    {0xFD2B, I_DEC_RR, "DEC IY"},
     {0xFDF9, I_LOAD_SP_RR, "LD SP,rr"},
     {0xF9, I_LOAD_SP_RR, "LD SP,rr"},
     {0xF3, I_DI, "DI"},
@@ -492,6 +524,38 @@ static void update_flags_sub(cpu_t *cpu, uint8_t a, uint8_t value,
   flag_set(cpu, FLAG_PV, ((a ^ value) & (a ^ result) & 0x80) != 0);
   register_flag_set(cpu, FLAG_N);
   flag_set(cpu, FLAG_C, diff < 0);
+}
+
+static void update_flags_add16_full(cpu_t *cpu, uint16_t a, uint16_t value,
+                                    uint16_t carry, uint16_t result,
+                                    uint32_t sum) {
+  flag_set(cpu, FLAG_S, result & 0x8000);
+  flag_set(cpu, FLAG_Z, result == 0);
+  flag_set(cpu, FLAG_H,
+           ((a & 0x0FFF) + (value & 0x0FFF) + carry) > 0x0FFF);
+  flag_set(cpu, FLAG_PV,
+           (~(a ^ value) & (a ^ result) & 0x8000) != 0);
+  register_flag_unset(cpu, FLAG_N);
+  flag_set(cpu, FLAG_C, sum > 0xFFFF);
+}
+
+static void update_flags_sub16_full(cpu_t *cpu, uint16_t a, uint16_t value,
+                                    uint16_t carry, uint16_t result,
+                                    int32_t diff) {
+  flag_set(cpu, FLAG_S, result & 0x8000);
+  flag_set(cpu, FLAG_Z, result == 0);
+  flag_set(cpu, FLAG_H, (a & 0x0FFF) < ((value & 0x0FFF) + carry));
+  flag_set(cpu, FLAG_PV,
+           ((a ^ value) & (a ^ result) & 0x8000) != 0);
+  register_flag_set(cpu, FLAG_N);
+  flag_set(cpu, FLAG_C, diff < 0);
+}
+
+static void update_flags_add16_hl(cpu_t *cpu, uint16_t a, uint16_t value,
+                                  uint32_t sum) {
+  flag_set(cpu, FLAG_H, ((a & 0x0FFF) + (value & 0x0FFF)) > 0x0FFF);
+  register_flag_unset(cpu, FLAG_N);
+  flag_set(cpu, FLAG_C, sum > 0xFFFF);
 }
 
 static void update_flags_logic(cpu_t *cpu, uint8_t result, uint8_t half_carry) {
@@ -1201,6 +1265,143 @@ void inst_cp_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d) {
   instruction_log(cpu, "CP (%s%+d)", register_name_16(index_reg),
                   (int8_t)d);
   update_flags_sub(cpu, a, value, 0, result, diff);
+}
+
+void inst_add_hl_rr(cpu_t *cpu, uint16_t op_code) {
+  uint8_t rr_bits = (uint8_t)((op_code >> 4) & 0x03);
+  uint8_t rr;
+  if (rr_bits == 0)
+    rr = REG_BC;
+  else if (rr_bits == 1)
+    rr = REG_DE;
+  else if (rr_bits == 2)
+    rr = REG_HL;
+  else
+    rr = REG_SP;
+
+  uint16_t hl = register_value_get(cpu, REG_HL);
+  uint16_t value = register_value_get(cpu, rr);
+  uint32_t sum = (uint32_t)hl + (uint32_t)value;
+  uint16_t result = (uint16_t)sum;
+
+  instruction_log(cpu, "ADD HL,%s", register_name_16(rr));
+  register_value_set(cpu, REG_HL, result);
+  update_flags_add16_hl(cpu, hl, value, sum);
+}
+
+void inst_add_ix_iy_rr(cpu_t *cpu, uint16_t op_code, uint8_t index_reg) {
+  uint8_t rr_bits = (uint8_t)((op_code >> 4) & 0x03);
+  uint8_t rr;
+  if (rr_bits == 0)
+    rr = REG_BC;
+  else if (rr_bits == 1)
+    rr = REG_DE;
+  else if (rr_bits == 2)
+    rr = index_reg;
+  else
+    rr = REG_SP;
+
+  uint16_t idx_value = register_value_get(cpu, index_reg);
+  uint16_t value = register_value_get(cpu, rr);
+  uint32_t sum = (uint32_t)idx_value + (uint32_t)value;
+  uint16_t result = (uint16_t)sum;
+
+  instruction_log(cpu, "ADD %s,%s", register_name_16(index_reg),
+                  register_name_16(rr));
+  register_value_set(cpu, index_reg, result);
+  update_flags_add16_hl(cpu, idx_value, value, sum);
+}
+
+void inst_adc_hl_rr(cpu_t *cpu, uint16_t op_code) {
+  uint8_t rr_bits = (uint8_t)((op_code >> 4) & 0x03);
+  uint8_t rr;
+  if (rr_bits == 0)
+    rr = REG_BC;
+  else if (rr_bits == 1)
+    rr = REG_DE;
+  else if (rr_bits == 2)
+    rr = REG_HL;
+  else
+    rr = REG_SP;
+
+  uint16_t hl = register_value_get(cpu, REG_HL);
+  uint16_t value = register_value_get(cpu, rr);
+  uint16_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint32_t sum = (uint32_t)hl + (uint32_t)value + carry;
+  uint16_t result = (uint16_t)sum;
+
+  instruction_log(cpu, "ADC HL,%s", register_name_16(rr));
+  register_value_set(cpu, REG_HL, result);
+  update_flags_add16_full(cpu, hl, value, carry, result, sum);
+}
+
+void inst_sbc_hl_rr(cpu_t *cpu, uint16_t op_code) {
+  uint8_t rr_bits = (uint8_t)((op_code >> 4) & 0x03);
+  uint8_t rr;
+  if (rr_bits == 0)
+    rr = REG_BC;
+  else if (rr_bits == 1)
+    rr = REG_DE;
+  else if (rr_bits == 2)
+    rr = REG_HL;
+  else
+    rr = REG_SP;
+
+  uint16_t hl = register_value_get(cpu, REG_HL);
+  uint16_t value = register_value_get(cpu, rr);
+  uint16_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  int32_t diff = (int32_t)hl - (int32_t)value - (int32_t)carry;
+  uint16_t result = (uint16_t)diff;
+
+  instruction_log(cpu, "SBC HL,%s", register_name_16(rr));
+  register_value_set(cpu, REG_HL, result);
+  update_flags_sub16_full(cpu, hl, value, carry, result, diff);
+}
+
+void inst_inc_rr(cpu_t *cpu, uint16_t op_code) {
+  uint8_t rr;
+
+  if (op_code == 0xDD23) {
+    rr = REG_IX;
+  } else if (op_code == 0xFD23) {
+    rr = REG_IY;
+  } else {
+    uint8_t rr_bits = (uint8_t)((op_code >> 4) & 0x03);
+    if (rr_bits == 0)
+      rr = REG_BC;
+    else if (rr_bits == 1)
+      rr = REG_DE;
+    else if (rr_bits == 2)
+      rr = REG_HL;
+    else
+      rr = REG_SP;
+  }
+
+  instruction_log(cpu, "INC %s", register_name_16(rr));
+  register_value_set(cpu, rr, (uint16_t)(register_value_get(cpu, rr) + 1));
+}
+
+void inst_dec_rr(cpu_t *cpu, uint16_t op_code) {
+  uint8_t rr;
+
+  if (op_code == 0xDD2B) {
+    rr = REG_IX;
+  } else if (op_code == 0xFD2B) {
+    rr = REG_IY;
+  } else {
+    uint8_t rr_bits = (uint8_t)((op_code >> 4) & 0x03);
+    if (rr_bits == 0)
+      rr = REG_BC;
+    else if (rr_bits == 1)
+      rr = REG_DE;
+    else if (rr_bits == 2)
+      rr = REG_HL;
+    else
+      rr = REG_SP;
+  }
+
+  instruction_log(cpu, "DEC %s", register_name_16(rr));
+  register_value_set(cpu, rr, (uint16_t)(register_value_get(cpu, rr) - 1));
 }
 
 void inst_jr(cpu_t *cpu, uint8_t op_code, uint8_t displacement) {

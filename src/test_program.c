@@ -168,6 +168,45 @@ const uint8_t test_program[] = {
     0x36, 0xC9,             // LD (HL),0xC9
     0xFF,                   // RST 38
     0xF7,                   // RST 30
+    0x26, 0x10,             // LD H,0x10
+    0x2E, 0x00,             // LD L,0x00
+    0x06, 0x00,             // LD B,0x00
+    0x0E, 0x01,             // LD C,0x01
+    0x16, 0x00,             // LD D,0x00
+    0x1E, 0x02,             // LD E,0x02
+    0xF9,                   // LD SP,HL
+    0x09,                   // ADD HL,BC
+    0x19,                   // ADD HL,DE
+    0x29,                   // ADD HL,HL
+    0x39,                   // ADD HL,SP
+    0x03,                   // INC BC
+    0x13,                   // INC DE
+    0x23,                   // INC HL
+    0x33,                   // INC SP
+    0x0B,                   // DEC BC
+    0x1B,                   // DEC DE
+    0x2B,                   // DEC HL
+    0x3B,                   // DEC SP
+    0x37,                   // SCF
+    0xED, 0x4A,             // ADC HL,BC
+    0xED, 0x5A,             // ADC HL,DE
+    0xED, 0x6A,             // ADC HL,HL
+    0xED, 0x7A,             // ADC HL,SP
+    0x37,                   // SCF
+    0xED, 0x42,             // SBC HL,BC
+    0xED, 0x52,             // SBC HL,DE
+    0xED, 0x62,             // SBC HL,HL
+    0xED, 0x72,             // SBC HL,SP
+    0xDD, 0x21, 0x00, 0x20, // LD IX,0x2000
+    0xFD, 0x21, 0x00, 0x30, // LD IY,0x3000
+    0xDD, 0x09,             // ADD IX,BC
+    0xDD, 0x19,             // ADD IX,DE
+    0xDD, 0x29,             // ADD IX,IX
+    0xDD, 0x39,             // ADD IX,SP
+    0xFD, 0x09,             // ADD IY,BC
+    0xFD, 0x19,             // ADD IY,DE
+    0xFD, 0x29,             // ADD IY,IY
+    0xFD, 0x39,             // ADD IY,SP
     0x76,       // HALT
     0x00        // NOP
 };

@@ -16,6 +16,11 @@ All notable changes to this project will be documented in this file.
 - Expand the built-in test program with CB and control-flow coverage, including RST.
 - Track a generated opcode table in the build.
 
+## [0.4.10] - 2026-01-07
+- Add 16-bit arithmetic helpers (ADD/ADC/SBC HL,rr; ADD IX/IY,rr; INC/DEC rr).
+- Extend opcode mapping and dispatch logic for 16-bit arithmetic.
+- Expand the built-in test program with 16-bit arithmetic coverage.
+
 ## [0.4.8] - 2026-01-07
 - Add debugger commands for load/dump, optional run/mem addresses, and help.
 - Support stepping/continuing when delay is zero.

@@ -370,6 +370,24 @@ static int execute_instruction(cpu_t *cpu) {
       displacement = get_byte_from_pc(cpu);
       inst_dec_idx(cpu, idx, displacement);
       break;
+    case I_ADD_HL_RR:
+      inst_add_hl_rr(cpu, op_code);
+      break;
+    case I_ADD_IX_IY_RR:
+      inst_add_ix_iy_rr(cpu, op_code, idx);
+      break;
+    case I_ADC_HL_RR:
+      inst_adc_hl_rr(cpu, op_code);
+      break;
+    case I_SBC_HL_RR:
+      inst_sbc_hl_rr(cpu, op_code);
+      break;
+    case I_INC_RR:
+      inst_inc_rr(cpu, op_code);
+      break;
+    case I_DEC_RR:
+      inst_dec_rr(cpu, op_code);
+      break;
     case I_AND_R:
       inst_and_r(cpu, (uint8_t)op_code);
       break;
