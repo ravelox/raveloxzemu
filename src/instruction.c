@@ -379,6 +379,22 @@ static instruction_map_t instruction_map[] = {
     {0xF3, I_DI, "DI"},
     {0xFB, I_EI, "EI"}};
 
+static instruction_group_t instruction_lookup[0x10000];
+static int instruction_lookup_ready = 0;
+
+void instruction_map_init(void) {
+  if (instruction_lookup_ready)
+    return;
+
+  size_t count = sizeof(instruction_map) / sizeof(instruction_map[0]);
+  for (size_t i = 0; i < 0x10000; i++)
+    instruction_lookup[i] = I_U;
+  for (size_t i = 0; i < count; i++) {
+    instruction_lookup[instruction_map[i].op_code] = instruction_map[i].group;
+  }
+  instruction_lookup_ready = 1;
+}
+
 static const char *register_name_8(uint8_t reg) {
   switch (reg) {
   case REG_A:
@@ -630,12 +646,9 @@ static uint8_t dec_value(cpu_t *cpu, uint8_t value) {
 }
 
 instruction_group_t instruction_group_get(uint16_t op_code) {
-  for (uint16_t index = 0; index < sizeof(instruction_map); index++) {
-    if (instruction_map[index].op_code == op_code)
-      return instruction_map[index].group;
-  }
-
-  return I_U;
+  if (!instruction_lookup_ready)
+    instruction_map_init();
+  return instruction_lookup[op_code];
 }
 
 void _load_r_r(cpu_t *cpu, uint8_t source, uint8_t dest) {
@@ -862,7 +875,8 @@ void inst_adc_a_r(cpu_t *cpu, uint8_t op_code) {
   const char *label = NULL;
   uint8_t value = read_r_value(cpu, op_code, &label);
   uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
-  uint8_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   uint16_t sum = (uint16_t)(a + value + carry);
   uint8_t result = (uint8_t)sum;
 
@@ -873,7 +887,8 @@ void inst_adc_a_r(cpu_t *cpu, uint8_t op_code) {
 
 void inst_adc_a_n(cpu_t *cpu, uint8_t value) {
   uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
-  uint8_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   uint16_t sum = (uint16_t)(a + value + carry);
   uint8_t result = (uint8_t)sum;
 
@@ -886,7 +901,8 @@ void inst_adc_a_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d) {
   uint16_t address = register_value_get(cpu, index_reg);
   uint8_t value = memory_get(cpu, (uint16_t)(address + d));
   uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
-  uint8_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   uint16_t sum = (uint16_t)(a + value + carry);
   uint8_t result = (uint8_t)sum;
 
@@ -935,7 +951,8 @@ void inst_sbc_a_r(cpu_t *cpu, uint8_t op_code) {
   const char *label = NULL;
   uint8_t value = read_r_value(cpu, op_code, &label);
   uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
-  uint8_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   int16_t diff = (int16_t)a - (int16_t)value - (int16_t)carry;
   uint8_t result = (uint8_t)diff;
 
@@ -946,7 +963,8 @@ void inst_sbc_a_r(cpu_t *cpu, uint8_t op_code) {
 
 void inst_sbc_a_n(cpu_t *cpu, uint8_t value) {
   uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
-  uint8_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   int16_t diff = (int16_t)a - (int16_t)value - (int16_t)carry;
   uint8_t result = (uint8_t)diff;
 
@@ -959,7 +977,8 @@ void inst_sbc_a_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d) {
   uint16_t address = register_value_get(cpu, index_reg);
   uint8_t value = memory_get(cpu, (uint16_t)(address + d));
   uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
-  uint8_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   int16_t diff = (int16_t)a - (int16_t)value - (int16_t)carry;
   uint8_t result = (uint8_t)diff;
 
@@ -1036,6 +1055,7 @@ void inst_cb(cpu_t *cpu, uint8_t op_code, uint8_t use_index, uint8_t index_reg,
   uint8_t value = 0;
   uint8_t result = 0;
   uint8_t carry = 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
   const char *target = NULL;
 
   if (use_index || r_bits == 0x06) {
@@ -1063,8 +1083,7 @@ void inst_cb(cpu_t *cpu, uint8_t op_code, uint8_t use_index, uint8_t index_reg,
       cb_write_value(cpu, r_bits, use_index, index_reg, d, address, result);
       return;
     case 0x02: { // RL
-      uint8_t carry_in =
-          (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+      uint8_t carry_in = (flags & (1 << FLAG_C)) ? 1 : 0;
       carry = (value >> 7) & 1;
       result = (uint8_t)((value << 1) | carry_in);
       instruction_log(cpu, "RL %s", target);
@@ -1073,8 +1092,7 @@ void inst_cb(cpu_t *cpu, uint8_t op_code, uint8_t use_index, uint8_t index_reg,
       return;
     }
     case 0x03: { // RR
-      uint8_t carry_in =
-          (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+      uint8_t carry_in = (flags & (1 << FLAG_C)) ? 1 : 0;
       carry = value & 1;
       result = (uint8_t)((value >> 1) | (carry_in << 7));
       instruction_log(cpu, "RR %s", target);
@@ -1117,8 +1135,7 @@ void inst_cb(cpu_t *cpu, uint8_t op_code, uint8_t use_index, uint8_t index_reg,
     uint8_t bit = op;
     uint8_t mask = (uint8_t)(1u << bit);
     uint8_t is_set = (value & mask) != 0;
-    uint8_t carry_flag =
-        (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+    uint8_t carry_flag = (flags & (1 << FLAG_C)) ? 1 : 0;
 
     instruction_log(cpu, "BIT %u,%s", bit, target);
     if (bit == 7)
@@ -1326,7 +1343,8 @@ void inst_adc_hl_rr(cpu_t *cpu, uint16_t op_code) {
 
   uint16_t hl = register_value_get(cpu, REG_HL);
   uint16_t value = register_value_get(cpu, rr);
-  uint16_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint16_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   uint32_t sum = (uint32_t)hl + (uint32_t)value + carry;
   uint16_t result = (uint16_t)sum;
 
@@ -1349,7 +1367,8 @@ void inst_sbc_hl_rr(cpu_t *cpu, uint16_t op_code) {
 
   uint16_t hl = register_value_get(cpu, REG_HL);
   uint16_t value = register_value_get(cpu, rr);
-  uint16_t carry = (register_value_get(cpu, REG_F) & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint16_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
   int32_t diff = (int32_t)hl - (int32_t)value - (int32_t)carry;
   uint16_t result = (uint16_t)diff;
 
@@ -1621,7 +1640,6 @@ void inst_im(cpu_t *cpu, uint8_t mode) {
 
 void inst_blkt(cpu_t *cpu, uint16_t op_code) {
   uint8_t hl_value = 0;
-  uint8_t a_value = 0;
   uint8_t repeat = 0;
   uint8_t op = (uint8_t)(op_code & 0x00FF);
 
@@ -1638,30 +1656,36 @@ void inst_blkt(cpu_t *cpu, uint16_t op_code) {
   }
 
   while (1) {
-    hl_value = memory_get(cpu,register_value_get(cpu,REG_HL));
-    a_value = register_value_get(cpu,REG_A);
-    _load_mem_from_mem(cpu,register_value_get(cpu,REG_DE), register_value_get(cpu,REG_HL));
+    uint16_t hl = register_value_get(cpu, REG_HL);
+    uint16_t de = register_value_get(cpu, REG_DE);
+    uint16_t bc = register_value_get(cpu, REG_BC);
+
+    hl_value = memory_get(cpu, hl);
+    memory_set(cpu, de, hl_value);
 
     if (op_code & 0x0008) {
-      register_dec(cpu,REG_DE);
-      register_dec(cpu,REG_HL);
+      de = (uint16_t)(de - 1);
+      hl = (uint16_t)(hl - 1);
     } else {
-      register_inc(cpu,REG_DE);
-      register_inc(cpu,REG_HL);
+      de = (uint16_t)(de + 1);
+      hl = (uint16_t)(hl + 1);
     }
 
-    register_dec(cpu,REG_BC);
+    bc = (uint16_t)(bc - 1);
+    register_value_set(cpu, REG_DE, de);
+    register_value_set(cpu, REG_HL, hl);
+    register_value_set(cpu, REG_BC, bc);
 
     // Flags: H and N reset, P/V set if BC != 0, S/Z/C unchanged.
     register_flag_unset(cpu,FLAG_H);
     register_flag_unset(cpu,FLAG_N);
-    if (register_value_get(cpu,REG_BC) != 0) {
+    if (bc != 0) {
       register_flag_set(cpu,FLAG_PV);
     } else {
       register_flag_unset(cpu,FLAG_PV);
     }
     repeat = ((op_code & 0x00FF) == 0x00B0 || (op_code & 0x00FF) == 0x00B8);
-    if (repeat && register_value_get(cpu,REG_BC) > 0) {
+    if (repeat && bc > 0) {
       continue;
     }
 
@@ -1670,7 +1694,7 @@ void inst_blkt(cpu_t *cpu, uint16_t op_code) {
 }
 
 void inst_blks(cpu_t *cpu, uint16_t op_code) {
-  uint8_t a_value = 0;
+  uint8_t a_value = (uint8_t)register_value_get(cpu, REG_A);
   uint8_t hl_value = 0;
   uint8_t result = 0;
   uint16_t bc_value = 0;
@@ -1690,8 +1714,9 @@ void inst_blks(cpu_t *cpu, uint16_t op_code) {
   }
 
   while (1) {
-    a_value = register_value_get(cpu,REG_A);
-    hl_value = memory_get(cpu,register_value_get(cpu,REG_HL));
+    uint16_t hl = register_value_get(cpu, REG_HL);
+    uint16_t bc = register_value_get(cpu, REG_BC);
+    hl_value = memory_get(cpu, hl);
     result = (uint8_t)(a_value - hl_value);
 
     // Flags from comparison
@@ -1712,8 +1737,9 @@ void inst_blks(cpu_t *cpu, uint16_t op_code) {
     }
     register_flag_set(cpu,FLAG_N);
 
-    register_dec(cpu,REG_BC);
-    bc_value = register_value_get(cpu,REG_BC);
+    bc = (uint16_t)(bc - 1);
+    register_value_set(cpu, REG_BC, bc);
+    bc_value = bc;
     if (bc_value != 0) {
       register_flag_set(cpu,FLAG_PV);
     } else {
@@ -1721,10 +1747,11 @@ void inst_blks(cpu_t *cpu, uint16_t op_code) {
     }
 
     if (op_code & 0x0008) {
-      register_dec(cpu,REG_HL);
+      hl = (uint16_t)(hl - 1);
     } else {
-      register_inc(cpu,REG_HL);
+      hl = (uint16_t)(hl + 1);
     }
+    register_value_set(cpu, REG_HL, hl);
 
     repeat = ((op_code & 0x00FF) == 0x00B1 || (op_code & 0x00FF) == 0x00B9);
     if (repeat && bc_value > 0 && result != 0) {

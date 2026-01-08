@@ -24,6 +24,10 @@ All notable changes to this project will be documented in this file.
 ## [0.4.11] - 2026-01-07
 - Add debugger `set` command for writing bytes directly into memory.
 
+## [0.4.12] - 2026-01-07
+- Add opcode dispatch table initialization with lazy guard.
+- Optimize debugger command parsing and minor instruction hot paths.
+
 ## [0.4.8] - 2026-01-07
 - Add debugger commands for load/dump, optional run/mem addresses, and help.
 - Support stepping/continuing when delay is zero.

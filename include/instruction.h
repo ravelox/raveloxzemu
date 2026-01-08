@@ -94,6 +94,7 @@ const char *label;
 } instruction_map_t;
 
 instruction_group_t instruction_group_get(uint16_t);
+void instruction_map_init(void);
 
 void _load_r_r(cpu_t *cpu, uint8_t, uint8_t);
 void _load_r_from_mem(cpu_t *cpu, uint8_t reg, uint16_t address);

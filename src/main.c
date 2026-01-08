@@ -14,16 +14,18 @@
 #define MEMORY_SIZE (uint16_t)(64 * 1024) - 1
 
 uint8_t get_byte_from_pc(cpu_t *cpu) {
-  uint8_t value = memory_get(cpu, register_value_get(cpu, REG_PC));
-  register_inc(cpu, REG_PC);
+  uint16_t pc = register_value_get(cpu, REG_PC);
+  uint8_t value = memory_get(cpu, pc);
+  register_value_set(cpu, REG_PC, (uint16_t)(pc + 1));
   return value;
 }
 
 uint16_t get_word_from_pc(cpu_t *cpu) {
-  uint16_t value = 0;
-  value = get_byte_from_pc(cpu);
-  value = (value << 8) & get_byte_from_pc(cpu);
-  return value;
+  uint16_t pc = register_value_get(cpu, REG_PC);
+  uint8_t low = memory_get(cpu, pc);
+  uint8_t high = memory_get(cpu, (uint16_t)(pc + 1));
+  register_value_set(cpu, REG_PC, (uint16_t)(pc + 2));
+  return (uint16_t)((high << 8) | low);
 }
 
 static void dump_memory_window(cpu_t *cpu, uint16_t address) {
@@ -137,6 +139,65 @@ static int parse_hex(const char *text, uint16_t *value_out) {
 
   *value_out = (uint16_t)value;
   return 0;
+}
+
+static char *next_token(char **cursor) {
+  char *ptr = *cursor;
+
+  while (*ptr && isspace((unsigned char)*ptr))
+    ptr++;
+
+  if (*ptr == '\0') {
+    *cursor = ptr;
+    return NULL;
+  }
+
+  char *start = ptr;
+  while (*ptr && !isspace((unsigned char)*ptr))
+    ptr++;
+
+  if (*ptr) {
+    *ptr = '\0';
+    ptr++;
+  }
+
+  *cursor = ptr;
+  return start;
+}
+
+typedef enum {
+  CMD_UNKNOWN,
+  CMD_QUIT,
+  CMD_RUN,
+  CMD_NEXT,
+  CMD_CONT,
+  CMD_MEM,
+  CMD_SET,
+  CMD_DELAY,
+  CMD_LOAD,
+  CMD_DUMP,
+  CMD_HELP
+} command_t;
+
+static command_t command_lookup(const char *cmd) {
+  static const struct {
+    const char *name;
+    command_t cmd;
+  } commands[] = {
+      {"quit", CMD_QUIT}, {"q", CMD_QUIT},     {"run", CMD_RUN},
+      {"r", CMD_RUN},     {"next", CMD_NEXT},  {"n", CMD_NEXT},
+      {"cont", CMD_CONT}, {"c", CMD_CONT},     {"mem", CMD_MEM},
+      {"m", CMD_MEM},     {"set", CMD_SET},    {"delay", CMD_DELAY},
+      {"d", CMD_DELAY},   {"load", CMD_LOAD},  {"l", CMD_LOAD},
+      {"dump", CMD_DUMP}, {"x", CMD_DUMP},     {"help", CMD_HELP},
+      {"h", CMD_HELP},    {"usage", CMD_HELP}, {NULL, CMD_UNKNOWN}};
+
+  for (size_t i = 0; commands[i].name != NULL; i++) {
+    if (strcmp(commands[i].name, cmd) == 0)
+      return commands[i].cmd;
+  }
+
+  return CMD_UNKNOWN;
 }
 
 static int execute_instruction(cpu_t *cpu) {
@@ -623,11 +684,10 @@ static void debugger_prompt(cpu_t *cpu) {
     if (!fgets(line, sizeof(line), stdin))
       break;
 
-    char *cmd = line;
-    while (isspace((unsigned char)*cmd))
-      cmd++;
+    char *cursor = line;
+    char *cmd = next_token(&cursor);
 
-    if (*cmd == '\0') {
+    if (!cmd) {
       if (cpu->clock.delay == 0 && has_run) {
         cpu->halted = false;
         execute_instruction(cpu);
@@ -635,26 +695,17 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    char *arg = cmd;
-    while (*arg && !isspace((unsigned char)*arg))
-      arg++;
-    if (*arg) {
-      *arg = '\0';
-      arg++;
-    }
-
-    while (*arg && isspace((unsigned char)*arg))
-      arg++;
-
-    if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) {
+    command_t command = command_lookup(cmd);
+    if (command == CMD_QUIT) {
       break;
     }
 
-    if (strcmp(cmd, "run") == 0 || strcmp(cmd, "r") == 0) {
+    if (command == CMD_RUN) {
       uint16_t address = 0;
-      if (*arg == '\0') {
+      char *addr_token = next_token(&cursor);
+      if (!addr_token) {
         address = (uint16_t)register_value_get(cpu, REG_PC);
-      } else if (parse_hex(arg, &address) != 0) {
+      } else if (parse_hex(addr_token, &address) != 0) {
         fprintf(stdout, "Usage: run [hex_address]\n");
         continue;
       }
@@ -663,8 +714,7 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if ((strcmp(cmd, "next") == 0 || strcmp(cmd, "n") == 0) &&
-        cpu->clock.delay == 0) {
+    if (command == CMD_NEXT && cpu->clock.delay == 0) {
       if (has_run) {
         cpu->halted = false;
         execute_instruction(cpu);
@@ -672,19 +722,19 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if ((strcmp(cmd, "cont") == 0 || strcmp(cmd, "c") == 0) &&
-        cpu->clock.delay == 0) {
+    if (command == CMD_CONT && cpu->clock.delay == 0) {
       if (has_run) {
         run_until_halt(cpu);
       }
       continue;
     }
 
-    if (strcmp(cmd, "mem") == 0 || strcmp(cmd, "m") == 0) {
+    if (command == CMD_MEM) {
       uint16_t address = 0;
-      if (*arg == '\0') {
+      char *addr_token = next_token(&cursor);
+      if (!addr_token) {
         address = (uint16_t)register_value_get(cpu, REG_PC);
-      } else if (parse_hex(arg, &address) != 0) {
+      } else if (parse_hex(addr_token, &address) != 0) {
         fprintf(stdout, "Usage: mem [hex_address]\n");
         continue;
       }
@@ -692,18 +742,9 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if (strcmp(cmd, "set") == 0) {
-      char *addr_str = arg;
-      while (*arg && !isspace((unsigned char)*arg))
-        arg++;
-      if (*arg) {
-        *arg = '\0';
-        arg++;
-      }
-      while (*arg && isspace((unsigned char)*arg))
-        arg++;
-
-      if (*addr_str == '\0' || *arg == '\0') {
+    if (command == CMD_SET) {
+      char *addr_str = next_token(&cursor);
+      if (!addr_str) {
         fprintf(stdout, "Usage: set <hex_address> <hex_byte> [hex_byte...]\n");
         continue;
       }
@@ -715,17 +756,13 @@ static void debugger_prompt(cpu_t *cpu) {
       }
 
       size_t count = 0;
-      while (*arg) {
-        char *byte_str = arg;
-        while (*arg && !isspace((unsigned char)*arg))
-          arg++;
-        if (*arg) {
-          *arg = '\0';
-          arg++;
-        }
-        while (*arg && isspace((unsigned char)*arg))
-          arg++;
+      char *byte_str = next_token(&cursor);
+      if (!byte_str) {
+        fprintf(stdout, "Usage: set <hex_address> <hex_byte> [hex_byte...]\n");
+        continue;
+      }
 
+      while (byte_str) {
         uint16_t byte_value = 0;
         if (parse_hex(byte_str, &byte_value) != 0 || byte_value > 0xFF) {
           fprintf(stdout,
@@ -737,6 +774,7 @@ static void debugger_prompt(cpu_t *cpu) {
         memory_set(cpu, address, (uint8_t)byte_value);
         address = (uint16_t)(address + 1);
         count++;
+        byte_str = next_token(&cursor);
       }
 
       if (count > 0) {
@@ -745,14 +783,15 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if (strcmp(cmd, "delay") == 0 || strcmp(cmd, "d") == 0) {
-      if (*arg == '\0') {
+    if (command == CMD_DELAY) {
+      char *value_token = next_token(&cursor);
+      if (!value_token) {
         fprintf(stdout, "Clock delay: %u\n", cpu->clock.delay);
         continue;
       }
       char *end = NULL;
-      unsigned long value = strtoul(arg, &end, 10);
-      if (arg == end) {
+      unsigned long value = strtoul(value_token, &end, 10);
+      if (value_token == end) {
         fprintf(stdout, "Usage: delay <value>\n");
         continue;
       }
@@ -761,18 +800,11 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if (strcmp(cmd, "load") == 0 || strcmp(cmd, "l") == 0) {
-      char *path = arg;
-      while (*arg && !isspace((unsigned char)*arg))
-        arg++;
-      if (*arg) {
-        *arg = '\0';
-        arg++;
-      }
-      while (*arg && isspace((unsigned char)*arg))
-        arg++;
+    if (command == CMD_LOAD) {
+      char *path = next_token(&cursor);
+      char *addr_str = next_token(&cursor);
 
-      if (*path == '\0' || *arg == '\0') {
+      if (!path || !addr_str) {
         fprintf(stdout, "Usage: load <path> <hex_address>\n");
         continue;
       }
@@ -780,7 +812,7 @@ static void debugger_prompt(cpu_t *cpu) {
       strip_enclosing_quotes(path);
 
       uint16_t address = 0;
-      if (parse_hex(arg, &address) != 0) {
+      if (parse_hex(addr_str, &address) != 0) {
         fprintf(stdout, "Usage: load <path> <hex_address>\n");
         continue;
       }
@@ -789,30 +821,12 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if (strcmp(cmd, "dump") == 0 || strcmp(cmd, "x") == 0) {
-      char *path = arg;
-      while (*arg && !isspace((unsigned char)*arg))
-        arg++;
-      if (*arg) {
-        *arg = '\0';
-        arg++;
-      }
-      while (*arg && isspace((unsigned char)*arg))
-        arg++;
+    if (command == CMD_DUMP) {
+      char *path = next_token(&cursor);
+      char *addr_str = next_token(&cursor);
+      char *len_str = next_token(&cursor);
 
-      char *addr_str = arg;
-      while (*arg && !isspace((unsigned char)*arg))
-        arg++;
-      if (*arg) {
-        *arg = '\0';
-        arg++;
-      }
-      while (*arg && isspace((unsigned char)*arg))
-        arg++;
-
-      char *len_str = arg;
-
-      if (*path == '\0' || *addr_str == '\0' || *len_str == '\0') {
+      if (!path || !addr_str || !len_str) {
         fprintf(stdout, "Usage: dump <path> <hex_address> <length>\n");
         continue;
       }
@@ -836,8 +850,7 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
-    if (strcmp(cmd, "help") == 0 || strcmp(cmd, "h") == 0 ||
-        strcmp(cmd, "usage") == 0) {
+    if (command == CMD_HELP) {
       fprintf(stdout,
               "Commands:\n"
               "  run [hex]    start execution (defaults to PC)\n"
@@ -872,6 +885,8 @@ int main(int argc, char *argv[]) {
     free(cpu);
     return -1;
   }
+
+  instruction_map_init();
 
   fprintf(stdout, "Memory size: %04x\n", memory_get_size(cpu));
 
