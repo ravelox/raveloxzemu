@@ -10,7 +10,7 @@
 #include "register.h"
 #include "test_program.h"
 
-#define CLOCK_DELAY 0
+#define CLOCK_DELAY 1000
 #define MEMORY_SIZE (uint16_t)(64 * 1024) - 1
 
 uint8_t get_byte_from_pc(cpu_t *cpu) {
@@ -139,38 +139,33 @@ static int parse_hex(const char *text, uint16_t *value_out) {
   return 0;
 }
 
-static void run_from_address(cpu_t *cpu, uint16_t address) {
-  cpu->halted = false;
-  register_value_set(cpu, REG_PC, address);
-  register_value_set(cpu, REG_SP, memory_get_size(cpu));
+static int execute_instruction(cpu_t *cpu) {
+  uint16_t value = 0;
+  uint16_t op_code = 0;
+  uint8_t idx = 0;
+  uint8_t displacement = 0;
+  uint16_t mem_addr = 0;
+  uint8_t reg;
 
-  while (1) {
-    if (!clock_available(cpu))
-      break;
+  if (!clock_available(cpu))
+    return -1;
 
-    uint16_t value = 0;
-    uint16_t op_code = 0;
-    uint8_t idx = 0;
-    uint8_t displacement = 0;
-    uint16_t mem_addr = 0;
-    uint8_t reg;
+  op_code = get_byte_from_pc(cpu);
 
-    op_code = get_byte_from_pc(cpu);
-
-    // Special prefixes
-    if (op_code == 0xDD || op_code == 0xFD || op_code == 0xED) {
-      if (op_code == 0xDD) {
-        idx = REG_IX;
-      }
-      if (op_code == 0xFD) {
-        idx = REG_IY;
-      }
-      op_code = (op_code << 8) & get_byte_from_pc(cpu);
+  // Special prefixes
+  if (op_code == 0xDD || op_code == 0xFD || op_code == 0xED) {
+    if (op_code == 0xDD) {
+      idx = REG_IX;
     }
+    if (op_code == 0xFD) {
+      idx = REG_IY;
+    }
+    op_code = (op_code << 8) & get_byte_from_pc(cpu);
+  }
 
-    instruction_group_t group = instruction_group_get(op_code);
+  instruction_group_t group = instruction_group_get(op_code);
 
-    switch (group) {
+  switch (group) {
     case I_NOP:
       break;
     case I_LOAD_R_R:
@@ -485,17 +480,44 @@ static void run_from_address(cpu_t *cpu, uint16_t address) {
       break;
     }
 
-    if (cpu->halted)
-      break;
+  if (cpu->halted)
+    return 1;
 
-    register_display(cpu);
-    if (clock_delay(cpu) == -1)
-      break;
+  register_display(cpu);
+  if (clock_delay(cpu) == -1)
+    return -1;
+
+  return 0;
+}
+
+static int run_from_address(cpu_t *cpu, uint16_t address) {
+  cpu->halted = false;
+  register_value_set(cpu, REG_PC, address);
+  register_value_set(cpu, REG_SP, memory_get_size(cpu));
+
+  while (1) {
+    int status = execute_instruction(cpu);
+    if (status != 0)
+      return status;
   }
+
+  return 0;
+}
+
+static int run_until_halt(cpu_t *cpu) {
+  cpu->halted = false;
+  while (1) {
+    int status = execute_instruction(cpu);
+    if (status != 0)
+      return status;
+  }
+
+  return 0;
 }
 
 static void debugger_prompt(cpu_t *cpu) {
   char line[128];
+  int has_run = 0;
 
   while (1) {
     fprintf(stdout, "\n(debug) ");
@@ -506,8 +528,13 @@ static void debugger_prompt(cpu_t *cpu) {
     while (isspace((unsigned char)*cmd))
       cmd++;
 
-    if (*cmd == '\0')
+    if (*cmd == '\0') {
+      if (cpu->clock.delay == 0 && has_run) {
+        cpu->halted = false;
+        execute_instruction(cpu);
+      }
       continue;
+    }
 
     char *arg = cmd;
     while (*arg && !isspace((unsigned char)*arg))
@@ -526,18 +553,40 @@ static void debugger_prompt(cpu_t *cpu) {
 
     if (strcmp(cmd, "run") == 0 || strcmp(cmd, "r") == 0) {
       uint16_t address = 0;
-      if (parse_hex(arg, &address) != 0) {
-        fprintf(stdout, "Usage: run <hex_address>\n");
+      if (*arg == '\0') {
+        address = (uint16_t)register_value_get(cpu, REG_PC);
+      } else if (parse_hex(arg, &address) != 0) {
+        fprintf(stdout, "Usage: run [hex_address]\n");
         continue;
       }
       run_from_address(cpu, address);
+      has_run = 1;
+      continue;
+    }
+
+    if ((strcmp(cmd, "next") == 0 || strcmp(cmd, "n") == 0) &&
+        cpu->clock.delay == 0) {
+      if (has_run) {
+        cpu->halted = false;
+        execute_instruction(cpu);
+      }
+      continue;
+    }
+
+    if ((strcmp(cmd, "cont") == 0 || strcmp(cmd, "c") == 0) &&
+        cpu->clock.delay == 0) {
+      if (has_run) {
+        run_until_halt(cpu);
+      }
       continue;
     }
 
     if (strcmp(cmd, "mem") == 0 || strcmp(cmd, "m") == 0) {
       uint16_t address = 0;
-      if (parse_hex(arg, &address) != 0) {
-        fprintf(stdout, "Usage: mem <hex_address>\n");
+      if (*arg == '\0') {
+        address = (uint16_t)register_value_get(cpu, REG_PC);
+      } else if (parse_hex(arg, &address) != 0) {
+        fprintf(stdout, "Usage: mem [hex_address]\n");
         continue;
       }
       dump_memory_window(cpu, address);
@@ -635,9 +684,24 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
+    if (strcmp(cmd, "help") == 0 || strcmp(cmd, "h") == 0 ||
+        strcmp(cmd, "usage") == 0) {
+      fprintf(stdout,
+              "Commands:\n"
+              "  run [hex]    start execution (defaults to PC)\n"
+              "  mem [hex]    show 32-byte memory window (defaults to PC)\n"
+              "  delay [n]    show/set clock delay\n"
+              "  load <path> <hex>   load file at address\n"
+              "  dump <path> <hex> <len>  dump memory to file\n"
+              "  next         step one instruction (delay=0)\n"
+              "  cont         run until HALT (delay=0)\n"
+              "  quit         exit emulator\n");
+      continue;
+    }
+
     fprintf(stdout,
-            "Commands: run <hex>, mem <hex>, delay [value], load <path> <hex>, "
-            "dump <path> <hex> <len>, quit\n");
+            "Commands: run [hex], mem [hex], delay [value], load <path> <hex>, "
+            "dump <path> <hex> <len>, next, cont, help, quit\n");
   }
 }
 

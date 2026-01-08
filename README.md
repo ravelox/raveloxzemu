@@ -22,11 +22,14 @@ The resulting binary is placed in `build/`.
 The binary initializes the registers, clock (delay loop), and 64KB of memory, then loads the built-in test program. Use the interactive prompt to run code and inspect memory.
 
 Debugger commands:
-- `run <hex_address>` — start execution from a memory address (resets `SP`).
-- `mem <hex_address>` — display a 32-byte memory window.
-- `delay [value]` — show or set the clock delay (0 disables delay).
+- `run [hex_address]` — start execution from a memory address (defaults to `PC`, resets `SP`).
+- `mem [hex_address]` — display a 32-byte memory window (defaults to `PC`).
+- `delay [value]` — show or set the clock delay (0 enables step/cont).
 - `load <path> <hex_address>` — load a file into memory at an address.
 - `dump <path> <hex_address> <length>` — save memory to a file.
+- `next` — execute one instruction (delay must be 0).
+- `cont` — run until HALT (delay must be 0).
+- `help` — display available commands.
 - `quit` — exit the emulator.
 
 ## Register helpers

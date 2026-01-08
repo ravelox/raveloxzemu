@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.8] - 2026-01-07
+- Add debugger commands for load/dump, optional run/mem addresses, and help.
+- Support stepping/continuing when delay is zero.
+- Change the default clock delay to 1000.
+
 ## [0.4.7] - 2026-01-07
 - Add control instruction helpers (DAA/CPL/NEG/CCF/SCF/DI/EI/IM/HALT).
 - Move execution control to a debugger-style prompt with load/dump commands.
