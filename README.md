@@ -29,6 +29,7 @@ The binary initializes the registers, clock (delay loop), and 64KB of memory, th
 Debugger commands:
 - `run [hex_address]` — start execution from a memory address (defaults to `PC`, resets `SP`).
 - `mem [hex_address]` — display a 32-byte memory window (defaults to `PC`).
+- `set <hex_address> <hex_byte...>` — write one or more bytes starting at the address.
 - `delay [value]` — show or set the clock delay (0 enables step/cont).
 - `load <path> <hex_address>` — load a file into memory at an address.
 - `dump <path> <hex_address> <length>` — save memory to a file.

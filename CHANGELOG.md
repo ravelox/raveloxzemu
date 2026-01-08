@@ -21,6 +21,9 @@ All notable changes to this project will be documented in this file.
 - Extend opcode mapping and dispatch logic for 16-bit arithmetic.
 - Expand the built-in test program with 16-bit arithmetic coverage.
 
+## [0.4.11] - 2026-01-07
+- Add debugger `set` command for writing bytes directly into memory.
+
 ## [0.4.8] - 2026-01-07
 - Add debugger commands for load/dump, optional run/mem addresses, and help.
 - Support stepping/continuing when delay is zero.

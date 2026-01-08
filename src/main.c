@@ -692,6 +692,59 @@ static void debugger_prompt(cpu_t *cpu) {
       continue;
     }
 
+    if (strcmp(cmd, "set") == 0) {
+      char *addr_str = arg;
+      while (*arg && !isspace((unsigned char)*arg))
+        arg++;
+      if (*arg) {
+        *arg = '\0';
+        arg++;
+      }
+      while (*arg && isspace((unsigned char)*arg))
+        arg++;
+
+      if (*addr_str == '\0' || *arg == '\0') {
+        fprintf(stdout, "Usage: set <hex_address> <hex_byte> [hex_byte...]\n");
+        continue;
+      }
+
+      uint16_t address = 0;
+      if (parse_hex(addr_str, &address) != 0) {
+        fprintf(stdout, "Usage: set <hex_address> <hex_byte> [hex_byte...]\n");
+        continue;
+      }
+
+      size_t count = 0;
+      while (*arg) {
+        char *byte_str = arg;
+        while (*arg && !isspace((unsigned char)*arg))
+          arg++;
+        if (*arg) {
+          *arg = '\0';
+          arg++;
+        }
+        while (*arg && isspace((unsigned char)*arg))
+          arg++;
+
+        uint16_t byte_value = 0;
+        if (parse_hex(byte_str, &byte_value) != 0 || byte_value > 0xFF) {
+          fprintf(stdout,
+                  "Usage: set <hex_address> <hex_byte> [hex_byte...]\n");
+          count = 0;
+          break;
+        }
+
+        memory_set(cpu, address, (uint8_t)byte_value);
+        address = (uint16_t)(address + 1);
+        count++;
+      }
+
+      if (count > 0) {
+        fprintf(stdout, "Wrote %zu byte%s\n", count, count == 1 ? "" : "s");
+      }
+      continue;
+    }
+
     if (strcmp(cmd, "delay") == 0 || strcmp(cmd, "d") == 0) {
       if (*arg == '\0') {
         fprintf(stdout, "Clock delay: %u\n", cpu->clock.delay);
@@ -789,6 +842,7 @@ static void debugger_prompt(cpu_t *cpu) {
               "Commands:\n"
               "  run [hex]    start execution (defaults to PC)\n"
               "  mem [hex]    show 32-byte memory window (defaults to PC)\n"
+              "  set <hex> <byte...>  write one or more bytes\n"
               "  delay [n]    show/set clock delay\n"
               "  load <path> <hex>   load file at address\n"
               "  dump <path> <hex> <len>  dump memory to file\n"
@@ -799,8 +853,9 @@ static void debugger_prompt(cpu_t *cpu) {
     }
 
     fprintf(stdout,
-            "Commands: run [hex], mem [hex], delay [value], load <path> <hex>, "
-            "dump <path> <hex> <len>, next, cont, help, quit\n");
+            "Commands: run [hex], mem [hex], set <hex> <byte...>, delay "
+            "[value], load <path> <hex>, dump <path> <hex> <len>, next, cont, "
+            "help, quit\n");
   }
 }
 
