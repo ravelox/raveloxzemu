@@ -49,6 +49,15 @@ typedef enum {
     I_DEC_R,
     I_DEC_HL,
     I_DEC_IDX,
+    I_DAA,
+    I_CPL,
+    I_NEG,
+    I_CCF,
+    I_SCF,
+    I_HALT,
+    I_DI,
+    I_EI,
+    I_IM,
     I_BLKT,
     I_BLKS,
     I_EX,
@@ -108,6 +117,15 @@ void inst_inc_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
 void inst_dec_r(cpu_t *cpu, uint8_t op_code);
 void inst_dec_hl(cpu_t *cpu);
 void inst_dec_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_daa(cpu_t *cpu);
+void inst_cpl(cpu_t *cpu);
+void inst_neg(cpu_t *cpu);
+void inst_ccf(cpu_t *cpu);
+void inst_scf(cpu_t *cpu);
+void inst_halt(cpu_t *cpu);
+void inst_di(cpu_t *cpu);
+void inst_ei(cpu_t *cpu);
+void inst_im(cpu_t *cpu, uint8_t mode);
 
 void inst_blkt(cpu_t *cpu, uint16_t);
 void inst_blks(cpu_t *cpu, uint16_t);

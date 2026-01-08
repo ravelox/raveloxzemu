@@ -18,6 +18,9 @@ struct cpu {
   uint16_t last_mem_write;
   bool last_mem_read_valid;
   bool last_mem_write_valid;
+  bool interrupts_enabled;
+  bool halted;
+  uint8_t interrupt_mode;
 };
 
 int cpu_init(cpu_t *cpu, uint32_t delay, uint16_t memory_size);

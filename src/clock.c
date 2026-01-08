@@ -31,20 +31,11 @@ int clock_delay(cpu_t *cpu) {
   if (!cpu)
     return -1;
 
-  // If delay is 0, wait until enter key is pressed
-  if (cpu->clock.delay == 0) {
-    int input_char = getc(stdin);
+  if (cpu->clock.delay == 0)
+    return 0;
 
-    while (1) {
-      if (input_char == 0x0a)
-        return 0;
-      if (input_char == 'q')
-        return -1;
-    }
-  } else {
-    for (uint32_t i = 0; i < cpu->clock.delay; i++) {
-      continue;
-    }
+  for (uint32_t i = 0; i < cpu->clock.delay; i++) {
+    continue;
   }
 
   return 0;

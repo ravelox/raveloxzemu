@@ -24,6 +24,7 @@ static instruction_map_t instruction_map[] = {
     {0x21, I_LOAD_RR_NN, "LD rr,nn"},
     {0x26, I_LOAD_R_N, "LD r,n"},
     {0x2E, I_LOAD_R_N, "LD r,n"},
+    {0x27, I_DAA, "DAA"},
     {0x22, I_LOAD_MEM_RR, "LD (nn),rr"},
     {0x2A, I_LOAD_RR_MEM, "LD rr,(nn)"},
     {0x31, I_LOAD_RR_NN, "LD rr,nn"},
@@ -31,6 +32,7 @@ static instruction_map_t instruction_map[] = {
     {0x3A, I_LOAD_A_MEM, "LD A,(nn)"},
     {0x3E, I_LOAD_R_N, "LD r,n"},
     {0x36, I_LOAD_HL_N, "LD (HL),n"},
+    {0x2F, I_CPL, "CPL"},
     {0x40, I_LOAD_R_R, "LD r,r"},
     {0x41, I_LOAD_R_R, "LD r,r"},
     {0x42, I_LOAD_R_R, "LD r,r"},
@@ -94,6 +96,7 @@ static instruction_map_t instruction_map[] = {
     {0x7C, I_LOAD_R_R, "LD r,r"},
     {0x7D, I_LOAD_R_R, "LD r,r"},
     {0x7F, I_LOAD_R_R, "LD r,r"},
+    {0x76, I_HALT, "HALT"},
     {0x80, I_ADD_A_R, "ADD A,r"},
     {0x81, I_ADD_A_R, "ADD A,r"},
     {0x82, I_ADD_A_R, "ADD A,r"},
@@ -148,6 +151,8 @@ static instruction_map_t instruction_map[] = {
     {0x35, I_DEC_HL, "DEC (HL)"},
     {0xC1, I_POP, "POP rr"},
     {0xC5, I_PUSH, "PUSH rr"},
+    {0x37, I_SCF, "SCF"},
+    {0x3F, I_CCF, "CCF"},
     {0xD1, I_POP, "POP rr"},
     {0xD5, I_PUSH, "PUSH rr"},
     {0xE1, I_POP, "POP rr"},
@@ -189,6 +194,22 @@ static instruction_map_t instruction_map[] = {
     {0xED4F, I_LOAD_A_R_REG, "LD A,R"},
     {0xED57, I_LOAD_I_A, "LD I,A"},
     {0xED5F, I_LOAD_R_REG_A, "LD R,A"},
+    {0xED44, I_NEG, "NEG"},
+    {0xED4C, I_NEG, "NEG"},
+    {0xED54, I_NEG, "NEG"},
+    {0xED5C, I_NEG, "NEG"},
+    {0xED64, I_NEG, "NEG"},
+    {0xED6C, I_NEG, "NEG"},
+    {0xED74, I_NEG, "NEG"},
+    {0xED7C, I_NEG, "NEG"},
+    {0xED46, I_IM, "IM 0"},
+    {0xED4E, I_IM, "IM 0"},
+    {0xED66, I_IM, "IM 0"},
+    {0xED6E, I_IM, "IM 0"},
+    {0xED56, I_IM, "IM 1"},
+    {0xED76, I_IM, "IM 1"},
+    {0xED5E, I_IM, "IM 2"},
+    {0xED7E, I_IM, "IM 2"},
     {0xED73, I_LOAD_MEM_SP, "LD (nn),SP"},
     {0xED7B, I_LOAD_SP_MEM, "LD SP,(nn)"},
     {0xEDA0, I_BLKT, "LDI"},
@@ -229,6 +250,8 @@ static instruction_map_t instruction_map[] = {
     {0xFDE5, I_PUSH, "PUSH rr"},
     {0xFDF9, I_LOAD_SP_RR, "LD SP,rr"},
     {0xF9, I_LOAD_SP_RR, "LD SP,rr"},
+    {0xF3, I_DI, "DI"},
+    {0xFB, I_EI, "EI"},
     {0xFF, I_U, "UNDEFINED"}};
 
 static const char *register_name_8(uint8_t reg) {
@@ -289,6 +312,13 @@ static void flag_set(cpu_t *cpu, uint8_t flag, int condition) {
     register_flag_set(cpu, flag);
   else
     register_flag_unset(cpu, flag);
+}
+
+static int parity_even(uint8_t value) {
+  value ^= value >> 4;
+  value ^= value >> 2;
+  value ^= value >> 1;
+  return (value & 1) == 0;
 }
 
 static uint8_t read_r_value(cpu_t *cpu, uint8_t op_code, const char **label) {
@@ -740,6 +770,97 @@ void inst_dec_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d) {
   instruction_log(cpu, "DEC (%s%+d)", register_name_16(index_reg),
                   (int8_t)d);
   memory_set(cpu, target, result);
+}
+
+void inst_daa(cpu_t *cpu) {
+  uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t adjust = 0;
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
+  uint8_t half = (flags & (1 << FLAG_H)) ? 1 : 0;
+  uint8_t neg = (flags & (1 << FLAG_N)) ? 1 : 0;
+  uint8_t result;
+
+  if (!neg) {
+    if (half || (a & 0x0F) > 0x09)
+      adjust |= 0x06;
+    if (carry || a > 0x99) {
+      adjust |= 0x60;
+      carry = 1;
+    }
+    result = (uint8_t)(a + adjust);
+  } else {
+    if (half)
+      adjust |= 0x06;
+    if (carry)
+      adjust |= 0x60;
+    result = (uint8_t)(a - adjust);
+  }
+
+  instruction_log(cpu, "DAA");
+  register_value_set(cpu, REG_A, result);
+  flag_set(cpu, FLAG_S, result & 0x80);
+  flag_set(cpu, FLAG_Z, result == 0);
+  flag_set(cpu, FLAG_H, ((a ^ result) & 0x10) != 0);
+  flag_set(cpu, FLAG_PV, parity_even(result));
+  flag_set(cpu, FLAG_C, carry);
+}
+
+void inst_cpl(cpu_t *cpu) {
+  uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
+  uint8_t result = (uint8_t)~a;
+
+  instruction_log(cpu, "CPL");
+  register_value_set(cpu, REG_A, result);
+  register_flag_set(cpu, FLAG_H);
+  register_flag_set(cpu, FLAG_N);
+}
+
+void inst_neg(cpu_t *cpu) {
+  uint8_t a = (uint8_t)register_value_get(cpu, REG_A);
+  int16_t diff = 0 - (int16_t)a;
+  uint8_t result = (uint8_t)diff;
+
+  instruction_log(cpu, "NEG");
+  register_value_set(cpu, REG_A, result);
+  update_flags_sub(cpu, 0, a, 0, result, diff);
+}
+
+void inst_ccf(cpu_t *cpu) {
+  uint8_t flags = (uint8_t)register_value_get(cpu, REG_F);
+  uint8_t carry = (flags & (1 << FLAG_C)) ? 1 : 0;
+
+  instruction_log(cpu, "CCF");
+  flag_set(cpu, FLAG_C, !carry);
+  flag_set(cpu, FLAG_H, carry);
+  register_flag_unset(cpu, FLAG_N);
+}
+
+void inst_scf(cpu_t *cpu) {
+  instruction_log(cpu, "SCF");
+  register_flag_set(cpu, FLAG_C);
+  register_flag_unset(cpu, FLAG_H);
+  register_flag_unset(cpu, FLAG_N);
+}
+
+void inst_halt(cpu_t *cpu) {
+  instruction_log(cpu, "HALT");
+  cpu->halted = true;
+}
+
+void inst_di(cpu_t *cpu) {
+  instruction_log(cpu, "DI");
+  cpu->interrupts_enabled = false;
+}
+
+void inst_ei(cpu_t *cpu) {
+  instruction_log(cpu, "EI");
+  cpu->interrupts_enabled = true;
+}
+
+void inst_im(cpu_t *cpu, uint8_t mode) {
+  instruction_log(cpu, "IM %u", mode);
+  cpu->interrupt_mode = mode;
 }
 
 void inst_blkt(cpu_t *cpu, uint16_t op_code) {

@@ -9,6 +9,11 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.7] - 2026-01-07
+- Add control instruction helpers (DAA/CPL/NEG/CCF/SCF/DI/EI/IM/HALT).
+- Move execution control to a debugger-style prompt with load/dump commands.
+- Track debugger file-path quoting and add HALT to the test program.
+
 ## [0.4.6] - 2026-01-07
 - Add 8-bit arithmetic helpers (ADD/ADC/SUB/SBC/INC/DEC) and dispatch logic.
 - Track and render CPU state with ANSI output, current instruction, and memory windows.

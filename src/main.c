@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,30 +26,122 @@ uint16_t get_word_from_pc(cpu_t *cpu) {
   return value;
 }
 
-int main(int argc, char *argv[]) {
-  cpu_t *cpu = (cpu_t *)malloc(sizeof(cpu_t));
+static void dump_memory_window(cpu_t *cpu, uint16_t address) {
+  uint16_t base = (uint16_t)(address & 0xFFF0);
 
-  if (!cpu) {
-    fprintf(stderr, "Cannot allocate CPU\n");
+  for (uint16_t row = 0; row < 2; row++) {
+    uint16_t row_addr = (uint16_t)(base + row * 16);
+    fprintf(stdout, "  %04X  ", row_addr);
+    for (uint16_t col = 0; col < 16; col++) {
+      uint16_t addr = (uint16_t)(row_addr + col);
+      fprintf(stdout, "%02X ", (uint8_t)cpu->memory.memory[addr]);
+    }
+    fprintf(stdout, " |");
+    for (uint16_t col = 0; col < 16; col++) {
+      uint16_t addr = (uint16_t)(row_addr + col);
+      uint8_t value = (uint8_t)cpu->memory.memory[addr];
+      fputc(isprint(value) ? value : '.', stdout);
+    }
+    fprintf(stdout, "|\n");
+  }
+}
+
+static void strip_enclosing_quotes(char *value) {
+  size_t len = 0;
+
+  if (!value)
+    return;
+
+  if (value[0] == '\\' && (value[1] == '"' || value[1] == '\'')) {
+    memmove(value, value + 1, strlen(value));
+  }
+
+  len = strlen(value);
+  if (len < 2)
+    return;
+
+  if ((value[0] == '"' && value[len - 1] == '"' &&
+       (len < 2 || value[len - 2] != '\\')) ||
+      (value[0] == '\'' && value[len - 1] == '\'' &&
+       (len < 2 || value[len - 2] != '\\'))) {
+    value[len - 1] = '\0';
+    memmove(value, value + 1, len - 1);
+  }
+}
+
+static int load_file_to_memory(cpu_t *cpu, const char *path,
+                               uint16_t address) {
+  FILE *file = fopen(path, "rb");
+  size_t bytes_read = 0;
+
+  if (!file) {
+    fprintf(stderr, "Cannot open file: %s\n", path);
     return -1;
   }
 
-  if (cpu_init(cpu, CLOCK_DELAY, MEMORY_SIZE) != 0) {
-    fprintf(stderr, "Cannot initialise CPU\n");
-    free(cpu);
+  bytes_read = fread(cpu->memory.memory + address, 1,
+                     cpu->memory.size - address, file);
+  fclose(file);
+
+  if (bytes_read == 0) {
+    fprintf(stderr, "No data read from file: %s\n", path);
     return -1;
   }
 
-  fprintf(stdout, "Memory size: %04x\n", memory_get_size(cpu));
+  fprintf(stdout, "Loaded %zu bytes at %04X\n", bytes_read, address);
+  return 0;
+}
 
-  if (memory_load(cpu, test_program, test_program_size) != 0) {
-    fprintf(stderr, "Cannot load test program\n");
-    cpu_destroy(cpu);
-    free(cpu);
+static int dump_memory_to_file(cpu_t *cpu, const char *path, uint16_t address,
+                               size_t length) {
+  FILE *file = fopen(path, "wb");
+  size_t bytes_written = 0;
+  size_t max_len = cpu->memory.size - address;
+
+  if (!file) {
+    fprintf(stderr, "Cannot open file: %s\n", path);
     return -1;
   }
 
-  // Set the stack pointer to the top of memory
+  if (length > max_len)
+    length = max_len;
+
+  bytes_written = fwrite(cpu->memory.memory + address, 1, length, file);
+  fclose(file);
+
+  if (bytes_written != length) {
+    fprintf(stderr, "Failed to write file: %s\n", path);
+    return -1;
+  }
+
+  fprintf(stdout, "Wrote %zu bytes from %04X to %s\n", bytes_written, address,
+          path);
+  return 0;
+}
+
+static int parse_hex(const char *text, uint16_t *value_out) {
+  char *end = NULL;
+  unsigned long value = strtoul(text, &end, 16);
+
+  if (!text || text == end)
+    return -1;
+
+  while (*end != '\0') {
+    if (!isspace((unsigned char)*end))
+      return -1;
+    end++;
+  }
+
+  if (value > 0xFFFF)
+    return -1;
+
+  *value_out = (uint16_t)value;
+  return 0;
+}
+
+static void run_from_address(cpu_t *cpu, uint16_t address) {
+  cpu->halted = false;
+  register_value_set(cpu, REG_PC, address);
   register_value_set(cpu, REG_SP, memory_get_size(cpu));
 
   while (1) {
@@ -268,6 +361,42 @@ int main(int argc, char *argv[]) {
       displacement = get_byte_from_pc(cpu);
       inst_dec_idx(cpu, idx, displacement);
       break;
+    case I_DAA:
+      inst_daa(cpu);
+      break;
+    case I_CPL:
+      inst_cpl(cpu);
+      break;
+    case I_NEG:
+      inst_neg(cpu);
+      break;
+    case I_CCF:
+      inst_ccf(cpu);
+      break;
+    case I_SCF:
+      inst_scf(cpu);
+      break;
+    case I_HALT:
+      inst_halt(cpu);
+      break;
+    case I_DI:
+      inst_di(cpu);
+      break;
+    case I_EI:
+      inst_ei(cpu);
+      break;
+    case I_IM:
+      if (op_code == 0xED46 || op_code == 0xED4E || op_code == 0xED66 ||
+          op_code == 0xED6E) {
+        inst_im(cpu, 0);
+      } else if (op_code == 0xED56 || op_code == 0xED76) {
+        inst_im(cpu, 1);
+      } else if (op_code == 0xED5E || op_code == 0xED7E) {
+        inst_im(cpu, 2);
+      } else {
+        fprintf(stderr, "op_code: %04x\t Incorrect group\n", op_code);
+      }
+      break;
     case I_PUSH:
       if (op_code == 0xC5) {
         reg = REG_BC;
@@ -356,10 +485,186 @@ int main(int argc, char *argv[]) {
       break;
     }
 
+    if (cpu->halted)
+      break;
+
     register_display(cpu);
     if (clock_delay(cpu) == -1)
       break;
   }
+}
+
+static void debugger_prompt(cpu_t *cpu) {
+  char line[128];
+
+  while (1) {
+    fprintf(stdout, "\n(debug) ");
+    if (!fgets(line, sizeof(line), stdin))
+      break;
+
+    char *cmd = line;
+    while (isspace((unsigned char)*cmd))
+      cmd++;
+
+    if (*cmd == '\0')
+      continue;
+
+    char *arg = cmd;
+    while (*arg && !isspace((unsigned char)*arg))
+      arg++;
+    if (*arg) {
+      *arg = '\0';
+      arg++;
+    }
+
+    while (*arg && isspace((unsigned char)*arg))
+      arg++;
+
+    if (strcmp(cmd, "quit") == 0 || strcmp(cmd, "q") == 0) {
+      break;
+    }
+
+    if (strcmp(cmd, "run") == 0 || strcmp(cmd, "r") == 0) {
+      uint16_t address = 0;
+      if (parse_hex(arg, &address) != 0) {
+        fprintf(stdout, "Usage: run <hex_address>\n");
+        continue;
+      }
+      run_from_address(cpu, address);
+      continue;
+    }
+
+    if (strcmp(cmd, "mem") == 0 || strcmp(cmd, "m") == 0) {
+      uint16_t address = 0;
+      if (parse_hex(arg, &address) != 0) {
+        fprintf(stdout, "Usage: mem <hex_address>\n");
+        continue;
+      }
+      dump_memory_window(cpu, address);
+      continue;
+    }
+
+    if (strcmp(cmd, "delay") == 0 || strcmp(cmd, "d") == 0) {
+      if (*arg == '\0') {
+        fprintf(stdout, "Clock delay: %u\n", cpu->clock.delay);
+        continue;
+      }
+      char *end = NULL;
+      unsigned long value = strtoul(arg, &end, 10);
+      if (arg == end) {
+        fprintf(stdout, "Usage: delay <value>\n");
+        continue;
+      }
+      cpu->clock.delay = (uint32_t)value;
+      fprintf(stdout, "Clock delay set to %u\n", cpu->clock.delay);
+      continue;
+    }
+
+    if (strcmp(cmd, "load") == 0 || strcmp(cmd, "l") == 0) {
+      char *path = arg;
+      while (*arg && !isspace((unsigned char)*arg))
+        arg++;
+      if (*arg) {
+        *arg = '\0';
+        arg++;
+      }
+      while (*arg && isspace((unsigned char)*arg))
+        arg++;
+
+      if (*path == '\0' || *arg == '\0') {
+        fprintf(stdout, "Usage: load <path> <hex_address>\n");
+        continue;
+      }
+
+      strip_enclosing_quotes(path);
+
+      uint16_t address = 0;
+      if (parse_hex(arg, &address) != 0) {
+        fprintf(stdout, "Usage: load <path> <hex_address>\n");
+        continue;
+      }
+
+      load_file_to_memory(cpu, path, address);
+      continue;
+    }
+
+    if (strcmp(cmd, "dump") == 0 || strcmp(cmd, "x") == 0) {
+      char *path = arg;
+      while (*arg && !isspace((unsigned char)*arg))
+        arg++;
+      if (*arg) {
+        *arg = '\0';
+        arg++;
+      }
+      while (*arg && isspace((unsigned char)*arg))
+        arg++;
+
+      char *addr_str = arg;
+      while (*arg && !isspace((unsigned char)*arg))
+        arg++;
+      if (*arg) {
+        *arg = '\0';
+        arg++;
+      }
+      while (*arg && isspace((unsigned char)*arg))
+        arg++;
+
+      char *len_str = arg;
+
+      if (*path == '\0' || *addr_str == '\0' || *len_str == '\0') {
+        fprintf(stdout, "Usage: dump <path> <hex_address> <length>\n");
+        continue;
+      }
+
+      strip_enclosing_quotes(path);
+
+      uint16_t address = 0;
+      if (parse_hex(addr_str, &address) != 0) {
+        fprintf(stdout, "Usage: dump <path> <hex_address> <length>\n");
+        continue;
+      }
+
+      char *end = NULL;
+      unsigned long length = strtoul(len_str, &end, 10);
+      if (len_str == end) {
+        fprintf(stdout, "Usage: dump <path> <hex_address> <length>\n");
+        continue;
+      }
+
+      dump_memory_to_file(cpu, path, address, (size_t)length);
+      continue;
+    }
+
+    fprintf(stdout,
+            "Commands: run <hex>, mem <hex>, delay [value], load <path> <hex>, "
+            "dump <path> <hex> <len>, quit\n");
+  }
+}
+
+int main(int argc, char *argv[]) {
+  cpu_t *cpu = (cpu_t *)malloc(sizeof(cpu_t));
+
+  if (!cpu) {
+    fprintf(stderr, "Cannot allocate CPU\n");
+    return -1;
+  }
+
+  if (cpu_init(cpu, CLOCK_DELAY, MEMORY_SIZE) != 0) {
+    fprintf(stderr, "Cannot initialise CPU\n");
+    free(cpu);
+    return -1;
+  }
+
+  fprintf(stdout, "Memory size: %04x\n", memory_get_size(cpu));
+
+  if (memory_load(cpu, test_program, test_program_size) != 0) {
+    fprintf(stderr, "Cannot load test program\n");
+    cpu_destroy(cpu);
+    free(cpu);
+    return -1;
+  }
+
+  debugger_prompt(cpu);
 
   cpu_destroy(cpu);
   free(cpu);

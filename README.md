@@ -19,7 +19,15 @@ The resulting binary is placed in `build/`.
 ./build/raveloxzemu
 ```
 
-The binary initializes the registers, clock (step mode by default), and 64KB of memory, then repeatedly fetches an opcode from memory at `PC`, decodes a subset of `LD` instructions (including immediate, memory, and indexed transfers), and dumps the register state. With the default `CLOCK_DELAY` of 0 you advance each step by pressing Enter.
+The binary initializes the registers, clock (delay loop), and 64KB of memory, then loads the built-in test program. Use the interactive prompt to run code and inspect memory.
+
+Debugger commands:
+- `run <hex_address>` — start execution from a memory address (resets `SP`).
+- `mem <hex_address>` — display a 32-byte memory window.
+- `delay [value]` — show or set the clock delay (0 disables delay).
+- `load <path> <hex_address>` — load a file into memory at an address.
+- `dump <path> <hex_address> <length>` — save memory to a file.
+- `quit` — exit the emulator.
 
 ## Register helpers
 

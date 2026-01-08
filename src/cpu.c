@@ -9,6 +9,9 @@ int cpu_init(cpu_t *cpu, uint32_t delay, uint16_t memory_size) {
   cpu->last_mem_write = 0;
   cpu->last_mem_read_valid = false;
   cpu->last_mem_write_valid = false;
+  cpu->interrupts_enabled = false;
+  cpu->halted = false;
+  cpu->interrupt_mode = 0;
 
   if (register_init(cpu) != 0)
     return -1;
