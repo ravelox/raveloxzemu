@@ -49,6 +49,23 @@ typedef enum {
     I_DEC_R,
     I_DEC_HL,
     I_DEC_IDX,
+    I_AND_R,
+    I_AND_N,
+    I_AND_IDX,
+    I_OR_R,
+    I_OR_N,
+    I_OR_IDX,
+    I_XOR_R,
+    I_XOR_N,
+    I_XOR_IDX,
+    I_CP_R,
+    I_CP_N,
+    I_CP_IDX,
+    I_JR,
+    I_JP,
+    I_CALL,
+    I_RET,
+    I_RST,
     I_DAA,
     I_CPL,
     I_NEG,
@@ -117,6 +134,23 @@ void inst_inc_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
 void inst_dec_r(cpu_t *cpu, uint8_t op_code);
 void inst_dec_hl(cpu_t *cpu);
 void inst_dec_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_and_r(cpu_t *cpu, uint8_t op_code);
+void inst_and_n(cpu_t *cpu, uint8_t value);
+void inst_and_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_or_r(cpu_t *cpu, uint8_t op_code);
+void inst_or_n(cpu_t *cpu, uint8_t value);
+void inst_or_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_xor_r(cpu_t *cpu, uint8_t op_code);
+void inst_xor_n(cpu_t *cpu, uint8_t value);
+void inst_xor_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_cp_r(cpu_t *cpu, uint8_t op_code);
+void inst_cp_n(cpu_t *cpu, uint8_t value);
+void inst_cp_idx(cpu_t *cpu, uint8_t index_reg, uint8_t d);
+void inst_jr(cpu_t *cpu, uint8_t op_code, uint8_t displacement);
+void inst_jp(cpu_t *cpu, uint16_t op_code, uint16_t address);
+void inst_call(cpu_t *cpu, uint16_t op_code, uint16_t address);
+void inst_ret(cpu_t *cpu, uint16_t op_code);
+void inst_rst(cpu_t *cpu, uint8_t op_code);
 void inst_daa(cpu_t *cpu);
 void inst_cpl(cpu_t *cpu);
 void inst_neg(cpu_t *cpu);
@@ -126,6 +160,8 @@ void inst_halt(cpu_t *cpu);
 void inst_di(cpu_t *cpu);
 void inst_ei(cpu_t *cpu);
 void inst_im(cpu_t *cpu, uint8_t mode);
+void inst_cb(cpu_t *cpu, uint8_t op_code, uint8_t use_index, uint8_t index_reg,
+             uint8_t d);
 
 void inst_blkt(cpu_t *cpu, uint16_t);
 void inst_blks(cpu_t *cpu, uint16_t);

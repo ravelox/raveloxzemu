@@ -9,6 +9,13 @@ All notable changes to this project will be documented in this file.
 
 ## Unreleased
 
+## [0.4.9] - 2026-01-07
+- Add logical (AND/OR/XOR/CP) helpers, opcode mapping, and dispatcher cases.
+- Execute CB/DDCB/FDCB rotate/shift/bit/set/res instructions with index support.
+- Add control-flow helpers for JR/JP/CALL/RET/RST (including RETN/RETI).
+- Expand the built-in test program with CB and control-flow coverage, including RST.
+- Track a generated opcode table in the build.
+
 ## [0.4.8] - 2026-01-07
 - Add debugger commands for load/dump, optional run/mem addresses, and help.
 - Support stepping/continuing when delay is zero.

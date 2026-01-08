@@ -42,7 +42,7 @@ Debugger commands:
 ## Clock
 
 - `clock_init`/`clock_destroy` create and clean up the simple emulator clock.
-- `clock_delay` respects an artificial delay; when set to 0, execution waits for Enter to simulate single-step behavior.
+- `clock_delay` respects an artificial delay; when set to 0, stepping/continuing is controlled via the debugger prompt.
 
 ## Memory
 
@@ -52,9 +52,10 @@ Debugger commands:
 
 ## Instructions
 
-- `instruction.c` maps opcodes to instruction groups with human-readable labels, implements a starter `LD` instruction set (including IX/IY indexed, I/R transfer variants, and `LD (HL), n`), includes block transfer/search helpers, and covers EX + PUSH/POP + 8-bit arithmetic.
+- `instruction.c` maps opcodes to instruction groups with human-readable labels, implements `LD` (including IX/IY indexed, I/R transfer variants), EX + PUSH/POP, 8-bit arithmetic/logical ops, control flow (JR/JP/CALL/RET/RST), block transfer/search helpers, and CB-prefixed rotate/shift/bit/set/res behavior.
 - `instruction.h` defines instruction groups and the helper APIs used by the opcode dispatcher.
 - Raw opcode listings live in `src/op_codes.txt`.
+- `opcode_table.*` is a generated opcode table used for reference/labeling.
 
 ## Project layout
 

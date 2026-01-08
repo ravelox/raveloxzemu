@@ -153,14 +153,28 @@ static int execute_instruction(cpu_t *cpu) {
   op_code = get_byte_from_pc(cpu);
 
   // Special prefixes
-  if (op_code == 0xDD || op_code == 0xFD || op_code == 0xED) {
-    if (op_code == 0xDD) {
-      idx = REG_IX;
+  if (op_code == 0xCB) {
+    uint8_t cb_op = get_byte_from_pc(cpu);
+    inst_cb(cpu, cb_op, 0, REG_HL, 0);
+    goto instruction_done;
+  }
+
+  if (op_code == 0xDD || op_code == 0xFD) {
+    uint8_t prefix = (uint8_t)op_code;
+    uint8_t next = get_byte_from_pc(cpu);
+
+    idx = (prefix == 0xDD) ? REG_IX : REG_IY;
+    if (next == 0xCB) {
+      displacement = get_byte_from_pc(cpu);
+      uint8_t cb_op = get_byte_from_pc(cpu);
+      inst_cb(cpu, cb_op, 1, idx, displacement);
+      goto instruction_done;
     }
-    if (op_code == 0xFD) {
-      idx = REG_IY;
-    }
-    op_code = (op_code << 8) & get_byte_from_pc(cpu);
+
+    op_code = (uint16_t)((prefix << 8) | next);
+  } else if (op_code == 0xED) {
+    uint8_t next = get_byte_from_pc(cpu);
+    op_code = (uint16_t)((op_code << 8) | next);
   }
 
   instruction_group_t group = instruction_group_get(op_code);
@@ -356,6 +370,72 @@ static int execute_instruction(cpu_t *cpu) {
       displacement = get_byte_from_pc(cpu);
       inst_dec_idx(cpu, idx, displacement);
       break;
+    case I_AND_R:
+      inst_and_r(cpu, (uint8_t)op_code);
+      break;
+    case I_AND_N:
+      value = get_byte_from_pc(cpu);
+      inst_and_n(cpu, (uint8_t)value);
+      break;
+    case I_AND_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_and_idx(cpu, idx, displacement);
+      break;
+    case I_OR_R:
+      inst_or_r(cpu, (uint8_t)op_code);
+      break;
+    case I_OR_N:
+      value = get_byte_from_pc(cpu);
+      inst_or_n(cpu, (uint8_t)value);
+      break;
+    case I_OR_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_or_idx(cpu, idx, displacement);
+      break;
+    case I_XOR_R:
+      inst_xor_r(cpu, (uint8_t)op_code);
+      break;
+    case I_XOR_N:
+      value = get_byte_from_pc(cpu);
+      inst_xor_n(cpu, (uint8_t)value);
+      break;
+    case I_XOR_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_xor_idx(cpu, idx, displacement);
+      break;
+    case I_CP_R:
+      inst_cp_r(cpu, (uint8_t)op_code);
+      break;
+    case I_CP_N:
+      value = get_byte_from_pc(cpu);
+      inst_cp_n(cpu, (uint8_t)value);
+      break;
+    case I_CP_IDX:
+      displacement = get_byte_from_pc(cpu);
+      inst_cp_idx(cpu, idx, displacement);
+      break;
+    case I_JR:
+      displacement = get_byte_from_pc(cpu);
+      inst_jr(cpu, (uint8_t)op_code, displacement);
+      break;
+    case I_JP:
+      if (op_code == 0xE9 || op_code == 0xDDE9 || op_code == 0xFDE9) {
+        inst_jp(cpu, op_code, 0);
+      } else {
+        mem_addr = get_word_from_pc(cpu);
+        inst_jp(cpu, op_code, mem_addr);
+      }
+      break;
+    case I_CALL:
+      mem_addr = get_word_from_pc(cpu);
+      inst_call(cpu, op_code, mem_addr);
+      break;
+    case I_RET:
+      inst_ret(cpu, op_code);
+      break;
+    case I_RST:
+      inst_rst(cpu, (uint8_t)op_code);
+      break;
     case I_DAA:
       inst_daa(cpu);
       break;
@@ -480,6 +560,7 @@ static int execute_instruction(cpu_t *cpu) {
       break;
     }
 
+instruction_done:
   if (cpu->halted)
     return 1;
 

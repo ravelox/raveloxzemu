@@ -13,6 +13,7 @@ set(SOURCES
     src/register.c
     src/clock.c
     src/memory.c
+    src/opcode_table.c
     src/instruction.c
     src/test_program.c
 )
