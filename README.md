@@ -7,6 +7,10 @@ A small C-based Z80 emulator experiment with:
 - Growing instruction set: LD/EX/PUSH/POP, 8-bit arithmetic + logic, 16-bit arithmetic, control flow, CB-prefixed ops.
 - Built-in test program covering supported instructions.
 
+## License
+
+GPLv3. See `LICENSE`.
+
 ## Build
 
 ```sh

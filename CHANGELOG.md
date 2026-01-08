@@ -28,6 +28,9 @@ All notable changes to this project will be documented in this file.
 - Add opcode dispatch table initialization with lazy guard.
 - Optimize debugger command parsing and minor instruction hot paths.
 
+## [0.4.13] - 2026-01-07
+- Add GPLv3 LICENSE and headers across source and header files.
+
 ## [0.4.8] - 2026-01-07
 - Add debugger commands for load/dump, optional run/mem addresses, and help.
 - Support stepping/continuing when delay is zero.
