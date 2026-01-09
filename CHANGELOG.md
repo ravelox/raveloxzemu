@@ -2,12 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.0] - 2024-01-01
-- Initialize CMake-based build.
-- Add basic register definitions and empty main scaffold.
-- Add git metadata and ignore rules.
-
 ## Unreleased
+
+## [0.4.13] - 2026-01-07
+- Add GPLv3 LICENSE and headers across source and header files.
+
+## [0.4.12] - 2026-01-07
+- Add opcode dispatch table initialization with lazy guard.
+- Optimize debugger command parsing and minor instruction hot paths.
+
+## [0.4.11] - 2026-01-07
+- Add debugger `set` command for writing bytes directly into memory.
+
+## [0.4.10] - 2026-01-07
+- Add 16-bit arithmetic helpers (ADD/ADC/SBC HL,rr; ADD IX/IY,rr; INC/DEC rr).
+- Extend opcode mapping and dispatch logic for 16-bit arithmetic.
+- Expand the built-in test program with 16-bit arithmetic coverage.
 
 ## [0.4.9] - 2026-01-07
 - Add logical (AND/OR/XOR/CP) helpers, opcode mapping, and dispatcher cases.
@@ -15,21 +25,6 @@ All notable changes to this project will be documented in this file.
 - Add control-flow helpers for JR/JP/CALL/RET/RST (including RETN/RETI).
 - Expand the built-in test program with CB and control-flow coverage, including RST.
 - Track a generated opcode table in the build.
-
-## [0.4.10] - 2026-01-07
-- Add 16-bit arithmetic helpers (ADD/ADC/SBC HL,rr; ADD IX/IY,rr; INC/DEC rr).
-- Extend opcode mapping and dispatch logic for 16-bit arithmetic.
-- Expand the built-in test program with 16-bit arithmetic coverage.
-
-## [0.4.11] - 2026-01-07
-- Add debugger `set` command for writing bytes directly into memory.
-
-## [0.4.12] - 2026-01-07
-- Add opcode dispatch table initialization with lazy guard.
-- Optimize debugger command parsing and minor instruction hot paths.
-
-## [0.4.13] - 2026-01-07
-- Add GPLv3 LICENSE and headers across source and header files.
 
 ## [0.4.8] - 2026-01-07
 - Add debugger commands for load/dump, optional run/mem addresses, and help.
@@ -74,8 +69,13 @@ All notable changes to this project will be documented in this file.
 - Decode prefixed opcodes and execute the supported `LD` instructions in the main loop.
 
 ## [0.2.0] - 2026-01-02
-- Expand register helpers to use a unified byte/word API, add getters/setters, increment/decrement helpers, flag bit utilities, and alternate bank swapping.
+- Expand register helpers to use a unified byte/word API, add getters/setters, increment-decrement helpers, flag bit utilities, and alternate bank swapping.
 - Enable `CMAKE_EXPORT_COMPILE_COMMANDS` and document build/run workflow.
 - Add simple clock module with optional step-through delay for single-stepping.
 - Add memory allocation module with byte get/set and bulk load helpers; seed stack pointer to top of memory.
 - Introduce instruction module stub with starter opcode table sourced from `src/op_codes.txt`.
+
+## [0.1.0] - 2024-01-01
+- Initialize CMake-based build.
+- Add basic register definitions and empty main scaffold.
+- Add git metadata and ignore rules.
